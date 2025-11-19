@@ -54,10 +54,9 @@ Sigue estos pasos para levantar el proyecto en tu entorno local de desarrollo.
 git clone [https://github.com/TU_USUARIO/cuchi-networks.git](https://github.com/TU_USUARIO/cuchi-networks.git)
 cd cuchi-networks
 3. Configurar Variables de Entorno
-
-Crea un archivo .env dentro de la carpeta backend/ con el siguiente contenido:
-Fragmento de código
-
+```
+### Crea un archivo .env dentro de la carpeta backend/ con el siguiente contenido:
+```bash
 PORT=3000
 DB_HOST=127.0.0.1
 DB_USER=cuchi_admin
@@ -65,16 +64,14 @@ DB_PASSWORD=securepassword
 DB_NAME=cuchi_networks_db
 DB_PORT=3306
 JWT_SECRET=pon_aqui_una_clave_super_secreta_y_larga
-
-4. Iniciar la Base de Datos
-
-Bash
-
+```
+### 4. Iniciar la Base de Datos
+```bash
 docker compose up -d
 
     Nota: La primera vez que se ejecute, Docker creará el contenedor MySQL e importará automáticamente las tablas definidas en database/init.sql.
-
-5. Instalar Dependencias
+```
+### 5. Instalar Dependencias
 
 Backend:
 Bash
