@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import pool from './src/db.js'; // Importamos la conexión que acabamos de crear
 import dashboardRoutes from './routes/dashboard.routes.js';
 import AuthRoutes from './routes/auth.routes.js';
+import equiposRoutes from './routes/equipos.routes.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -35,6 +36,7 @@ app.get('/api/test-db', async (req, res) => {
 app.use('/api/auth', AuthRoutes);
 // Rutas de la API
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/equipos', equiposRoutes);
 // --- Arrancar Servidor ---
 app.listen(PORT, () => {
     console.log(`\n📡 Servidor Backend corriendo en http://localhost:${PORT}`);
