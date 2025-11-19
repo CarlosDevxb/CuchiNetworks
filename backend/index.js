@@ -5,6 +5,12 @@ import pool from './src/db.js'; // Importamos la conexión que acabamos de crear
 import dashboardRoutes from './routes/dashboard.routes.js';
 import AuthRoutes from './routes/auth.routes.js';
 import equiposRoutes from './routes/equipos.routes.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Configuración para __dirname en ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -12,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); // Permite que React (puerto 5173) hable con este server
 app.use(morgan('dev')); // Muestra logs bonitos en la consola
 app.use(express.json()); // Permite recibir datos JSON en los POST
-
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 // --- Rutas de Prueba ---
 
 // 1. Ruta básica para ver si el server vive

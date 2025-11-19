@@ -1,6 +1,7 @@
 import pool from '../src/db.js';
 
-// 1. OBTENER TODOS LOS EQUIPOS (Con nombre de ubicación)
+
+// 1. OBTENER TODOS LOS EQUIPOS (Para tarjetas: vista principal)
 export const getEquipos = async (req, res) => {
     try {
         const [rows] = await pool.query(`
@@ -10,6 +11,8 @@ export const getEquipos = async (req, res) => {
                 e.tipo, 
                 e.estado, 
                 e.modelo, 
+                e.imagen_url,       -- ¡NUEVO!
+                e.serial_number,    -- ¡NUEVO!
                 u.nombre as ubicacion 
             FROM Equipos e
             LEFT JOIN Ubicaciones u ON e.ubicacion_id = u.id
@@ -21,56 +24,74 @@ export const getEquipos = async (req, res) => {
     }
 };
 
-// 2. OBTENER UN SOLO EQUIPO
+// 2. OBTENER UN SOLO EQUIPO (Para detalle técnico)
 export const getEquipoById = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM Equipos WHERE id = ?', [req.params.id]);
+        const [rows] = await pool.query(`
+            SELECT 
+                e.*,                 -- Seleccionar todo de la tabla equipos
+                u.nombre as ubicacion_nombre,
+                u.descripcion as ubicacion_descripcion
+            FROM Equipos e
+            LEFT JOIN Ubicaciones u ON e.ubicacion_id = u.id
+            WHERE e.id = ?
+        `, [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ message: 'Equipo no encontrado' });
         res.json(rows[0]);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
 // 3. CREAR NUEVO EQUIPO
 export const createEquipo = async (req, res) => {
-    const { nombre_equipo, tipo, modelo, estado, ubicacion_id } = req.body;
+    // Asegurarse de recibir los nuevos campos
+    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number } = req.body;
     try {
         const [result] = await pool.query(
-            'INSERT INTO Equipos (nombre_equipo, tipo, modelo, estado, ubicacion_id) VALUES (?, ?, ?, ?, ?)',
-            [nombre_equipo, tipo, modelo, estado || 'operativo', ubicacion_id]
+            'INSERT INTO Equipos (nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [nombre_equipo, tipo, modelo, estado || 'operativo', ubicacion_id, imagen_url, serial_number]
         );
-        res.json({ 
+        res.status(201).json({ // 201 Created
             id: result.insertId, 
-            nombre_equipo, 
-            tipo, 
-            modelo, 
-            estado, 
-            ubicacion_id 
+            nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number 
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
 // 4. ACTUALIZAR EQUIPO
 export const updateEquipo = async (req, res) => {
     const { id } = req.params;
-    const { nombre_equipo, tipo, modelo, estado, ubicacion_id } = req.body;
+    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number } = req.body;
+    
     try {
-        const [result] = await pool.query(
-            'UPDATE Equipos SET nombre_equipo = ?, tipo = ?, modelo = ?, estado = ?, ubicacion_id = ? WHERE id = ?',
-            [nombre_equipo, tipo, modelo, estado, ubicacion_id, id]
-        );
+        let query = 'UPDATE Equipos SET nombre_equipo=?, tipo=?, modelo=?, estado=?, ubicacion_id=?, serial_number=?';
+        let params = [nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number];
+
+        // SI LLEGÓ UNA IMAGEN NUEVA, actualizamos también la URL
+        if (req.file) {
+            // Construimos la URL completa para guardarla en la BD
+            const imagenUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+            query += ', imagen_url=?';
+            params.push(imagenUrl);
+        }
+
+        query += ' WHERE id=?';
+        params.push(id);
+
+        const [result] = await pool.query(query, params);
 
         if (result.affectedRows === 0) return res.status(404).json({ message: 'Equipo no encontrado' });
 
-        res.json({ message: 'Equipo actualizado correctamente' });
+        // Devolvemos la nueva imagen para actualizar el frontend
+        res.json({ 
+            message: 'Equipo actualizado', 
+            imagen_url: req.file ? `http://localhost:3000/uploads/${req.file.filename}` : null 
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-
 // 5. ELIMINAR EQUIPO
 export const deleteEquipo = async (req, res) => {
     try {

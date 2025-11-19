@@ -9,7 +9,8 @@ import StudentLayout from './layouts/StudentLayout';
 // Pages (Aquí irás importando tus páginas reales)
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
-
+import EquiposPage from './pages/EquiposPage';
+import EquipoDetallePage from './pages/EquipoDetallePage';
 // Componente de Protección
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
@@ -25,16 +26,14 @@ function App() {
       <Route path="/login" element={<Login />} />
 
       {/* --- RUTAS ADMIN --- */}
-      <Route path="/admin" element={
-        <ProtectedRoute requiredRole="admin">
-          <AdminLayout />
-        </ProtectedRoute>
-      }>
+      <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
         <Route path="dashboard" element={<AdminDashboard />} />
-        {/* <Route path="equipos" element={<EquiposPage />} /> */}
-        {/* <Route path="materias" element={<MateriasPage />} /> */}
-      </Route>
+        <Route path="equipos" element={<EquiposPage />} />
+        
+        {/* 2. CAMBIAR ESTA LÍNEA (Antes tenías <div>Detalle de Equipo</div>) */}
+        <Route path="equipos/:id" element={<EquipoDetallePage />} />
 
+      </Route>
       {/* --- RUTAS DOCENTE --- */}
       <Route path="/docente" element={
         <ProtectedRoute requiredRole="docente">
