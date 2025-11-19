@@ -1,6 +1,9 @@
 version: '3.8'
 
 services:
+  # ------------------------------------------
+  # SERVICIO 1: BASE DE DATOS (MySQL)
+  # ------------------------------------------
   db:
     image: mysql:8.0
     container_name: cuchinetworks_db
@@ -14,8 +17,54 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # Esto carga tu script SQL automáticamente al iniciar
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # HEALTHCHECK: Vital para que el Backend sepa cuándo MySQL está realmente listo
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # ------------------------------------------
+  # SERVICIO 2: BACKEND (Node API)
+  # ------------------------------------------
+  backend:
+    build: ./backend
+    container_name: cuchinetworks_api
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # ¡OJO AQUÍ! Ya no es localhost ni 127.0.0.1. 
+      # Dentro de Docker, el host es el nombre del servicio: "db"
+      - DB_HOST=db
+      - DB_USER=CuchiNetworks
+      - DB_PASSWORD=ositoBimbo
+      - DB_NAME=CuchiNetworks
+      - DB_PORT=3306
+      - JWT_SECRET=vainilla
+      - PORT=3000
+    depends_on:
+      db:
+        condition: service_healthy # Espera a que el healthcheck de la DB pase
+    volumes:
+      # Esto permite que si editas código en tu PC, se actualice en el contenedor (Hot Reload)
+      - ./backend:/app
+      - /app/node_modules
+
+  # ------------------------------------------
+  # SERVICIO 3: FRONTEND (React)
+  # ------------------------------------------
+  frontend:
+    build: ./frontend
+    container_name: cuchinetworks_client
+    restart: always
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend # Espera a que el backend inicie
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
 volumes:
   mysql_data:
