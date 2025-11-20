@@ -11,7 +11,8 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import EquiposPage from './pages/EquiposPage';
 import EquipoDetallePage from './pages/EquipoDetallePage';
-// Componente de Protección
+import EquipoCreatePage from './pages/EquipoCreatePage';
+// Componente de Ruta Protegida
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="h-screen flex items-center justify-center">Cargando...</div>;
@@ -29,7 +30,8 @@ function App() {
       <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminLayout /></ProtectedRoute>}>
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="equipos" element={<EquiposPage />} />
-        
+            <Route path="equipos/nuevo" element={<EquipoCreatePage />} />  {/* <--- AQUÍ, ANTES DEL ID */}
+<Route path="equipos/:id" element={<EquipoDetallePage />} />
         {/* 2. CAMBIAR ESTA LÍNEA (Antes tenías <div>Detalle de Equipo</div>) */}
         <Route path="equipos/:id" element={<EquipoDetallePage />} />
 
@@ -43,6 +45,7 @@ function App() {
         <Route path="dashboard" element={<div className="text-2xl text-cuchi-text font-bold">Bienvenido Profesor</div>} />
         <Route path="registrar-uso" element={<div>Aquí irá el formulario de asistencia</div>} />
       </Route>
+
 
       {/* --- RUTAS ALUMNO --- */}
       <Route path="/alumno" element={

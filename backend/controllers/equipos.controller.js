@@ -44,18 +44,30 @@ export const getEquipoById = async (req, res) => {
 };
 // 3. CREAR NUEVO EQUIPO
 export const createEquipo = async (req, res) => {
-    // Asegurarse de recibir los nuevos campos
-    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number } = req.body;
+    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number } = req.body;
+    
     try {
+        // Validar ubicacion_id
+        const ubicacionFinal = (ubicacion_id && ubicacion_id !== 'undefined') ? ubicacion_id : null;
+
+        // Preparar URL de imagen
+        let imagenUrl = null;
+        if (req.file) {
+            imagenUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+        }
+
         const [result] = await pool.query(
             'INSERT INTO Equipos (nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [nombre_equipo, tipo, modelo, estado || 'operativo', ubicacion_id, imagen_url, serial_number]
+            [nombre_equipo, tipo, modelo, estado || 'operativo', ubicacionFinal, imagenUrl, serial_number]
         );
-        res.status(201).json({ // 201 Created
+
+        res.status(201).json({ 
             id: result.insertId, 
-            nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number 
+            message: "Equipo creado exitosamente",
+            imagen_url: imagenUrl
         });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: error.message });
     }
 };

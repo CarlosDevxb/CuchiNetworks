@@ -16,7 +16,7 @@ const router = Router();
 
 // Todas las rutas requieren Token y ser Admin
 router.use(verifyToken, verifyAdmin);
-
+router.post('/', upload.single('imagen'), createEquipo);
 router.put('/:id', upload.single('imagen'), updateEquipo);
 router.get('/', getEquipos);
 router.get('/:id', getEquipoById);
