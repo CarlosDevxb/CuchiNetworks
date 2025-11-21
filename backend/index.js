@@ -7,6 +7,7 @@ import AuthRoutes from './routes/auth.routes.js';
 import equiposRoutes from './routes/equipos.routes.js';
 import ubicacionesRoutes from './routes/ubicaciones.routes.js';
 
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 
