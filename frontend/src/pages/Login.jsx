@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Zap } from 'lucide-react';
 // Importas la imagen como si fuera un componente más
-import loginImage from '../assets/cuchilogov2.png';
+import loginImage from '../assets/BCO.678a7549-e329-4bef-a903-c8ba5bbdbefb.pngs';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

@@ -5,6 +5,8 @@ import pool from './src/db.js'; // Importamos la conexión que acabamos de crear
 import dashboardRoutes from './routes/dashboard.routes.js';
 import AuthRoutes from './routes/auth.routes.js';
 import equiposRoutes from './routes/equipos.routes.js';
+import ubicacionesRoutes from './routes/ubicaciones.routes.js';
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -41,6 +43,8 @@ app.get('/api/test-db', async (req, res) => {
 
 app.use('/api/auth', AuthRoutes);
 // Rutas de la API
+// ...
+app.use('/api/ubicaciones', ubicacionesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/equipos', equiposRoutes);
 // --- Arrancar Servidor ---

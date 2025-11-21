@@ -44,45 +44,73 @@ export const getEquipoById = async (req, res) => {
 };
 // 3. CREAR NUEVO EQUIPO
 export const createEquipo = async (req, res) => {
-    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number } = req.body;
+    // Agregamos 'detalles' a la desestructuración
+    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number, detalles } = req.body;
     
     try {
-        // Validar ubicacion_id
         const ubicacionFinal = (ubicacion_id && ubicacion_id !== 'undefined') ? ubicacion_id : null;
-
-        // Preparar URL de imagen
         let imagenUrl = null;
         if (req.file) {
             imagenUrl = `http://localhost:3000/uploads/${req.file.filename}`;
         }
 
+        // NOTA: Si 'detalles' viene como string desde el FormData, hay que parsearlo, 
+        // pero MySQL lo espera como string JSON o objeto válido.
+        // Al usar FormData en el front, los objetos complejos viajan como strings, así que haremos esto:
+        let detallesFinal = detalles;
+        try {
+             // Si viene como string JSON, verificamos que sea válido
+            if (typeof detalles === 'string') {
+                JSON.parse(detalles); // Solo para validar, si falla va al catch
+            } else {
+                // Si es objeto JS, lo pasamos a string para MySQL
+                detallesFinal = JSON.stringify(detalles);
+            }
+        } catch (e) {
+            detallesFinal = null; // Si no es válido, guardamos null
+        }
+
         const [result] = await pool.query(
-            'INSERT INTO Equipos (nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [nombre_equipo, tipo, modelo, estado || 'operativo', ubicacionFinal, imagenUrl, serial_number]
+            'INSERT INTO Equipos (nombre_equipo, tipo, modelo, estado, ubicacion_id, imagen_url, serial_number, detalles) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [nombre_equipo, tipo, modelo, estado || 'operativo', ubicacionFinal, imagenUrl, serial_number, detallesFinal]
         );
 
-        res.status(201).json({ 
-            id: result.insertId, 
-            message: "Equipo creado exitosamente",
-            imagen_url: imagenUrl
-        });
+        res.status(201).json({ message: "Equipo creado exitosamente", id: result.insertId });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: error.message });
     }
-};
-// 4. ACTUALIZAR EQUIPO
-export const updateEquipo = async (req, res) => {
+};export const updateEquipo = async (req, res) => {
     const { id } = req.params;
-    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number } = req.body;
+    // Agregamos 'detalles' a la lista de cosas que recibimos
+    const { nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number, detalles } = req.body;
     
     try {
-        let query = 'UPDATE Equipos SET nombre_equipo=?, tipo=?, modelo=?, estado=?, ubicacion_id=?, serial_number=?';
-        let params = [nombre_equipo, tipo, modelo, estado, ubicacion_id, serial_number];
+        // 1. Validar Ubicación
+        const ubicacionFinal = (ubicacion_id && ubicacion_id !== 'undefined' && ubicacion_id !== 'null') ? ubicacion_id : null;
 
-        // SI LLEGÓ UNA IMAGEN NUEVA, actualizamos también la URL
+        // 2. Procesar el JSON de Detalles
+        // Al venir por FormData, 'detalles' llega como string. Hay que asegurarnos de enviarlo bien a MySQL.
+        let detallesFinal = detalles;
+        try {
+             if (typeof detalles === 'string') {
+                 // Validamos que sea un JSON real
+                 JSON.parse(detalles); 
+             } else {
+                 // Si ya es objeto, lo volvemos string
+                 detallesFinal = JSON.stringify(detalles);
+             }
+        } catch (e) {
+             // Si falla o viene vacío, guardamos lo que había antes o null
+             // Nota: Idealmente deberíamos consultar el anterior, pero por ahora si es inválido lo dejamos pasar como null o string raw
+             if (!detalles) detallesFinal = null;
+        }
+
+        let query = 'UPDATE Equipos SET nombre_equipo=?, tipo=?, modelo=?, estado=?, ubicacion_id=?, serial_number=?, detalles=?';
+        let params = [nombre_equipo, tipo, modelo, estado, ubicacionFinal, serial_number, detallesFinal];
+
+        // 3. Manejar Imagen Nueva
         if (req.file) {
-            // Construimos la URL completa para guardarla en la BD
             const imagenUrl = `http://localhost:3000/uploads/${req.file.filename}`;
             query += ', imagen_url=?';
             params.push(imagenUrl);
@@ -95,13 +123,14 @@ export const updateEquipo = async (req, res) => {
 
         if (result.affectedRows === 0) return res.status(404).json({ message: 'Equipo no encontrado' });
 
-        // Devolvemos la nueva imagen para actualizar el frontend
         res.json({ 
-            message: 'Equipo actualizado', 
+            message: 'Equipo actualizado correctamente', 
             imagen_url: req.file ? `http://localhost:3000/uploads/${req.file.filename}` : null 
         });
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error("❌ Error updateEquipo:", error);
+        res.status(500).json({ message: "Error al actualizar: " + error.message });
     }
 };
 // 5. ELIMINAR EQUIPO
