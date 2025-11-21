@@ -1,151 +1,163 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Server, Lock, Mail, ArrowRight, ShieldCheck } from 'lucide-react'; // Iconos bonitos
-
+import { Mail, Lock, ArrowRight, Zap } from 'lucide-react';
+// Importas la imagen como si fuera un componente más
+import loginImage from '../assets/BCO.678a7549-e329-4bef-a903-c8ba5bbdbefb.pngs';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // Para efecto de carga
+  const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
     
     try {
-      // Simulamos un pequeño delay para que se vea la animación del botón (opcional)
       await new Promise(resolve => setTimeout(resolve, 800));
       
+      // 1. Hacemos el login y recibimos el usuario
       const user = await login(email, password);
-      if (user.rol === 'admin') navigate('/admin/dashboard');
-      else navigate('/alumno/dashboard');
+      
+      // 2. REDIRECCIÓN INTELIGENTE (Switch Case)
+      switch (user.rol) {
+        case 'admin':
+          navigate('/admin/dashboard');
+          break;
+        case 'docente':
+          navigate('/docente/dashboard'); // <--- ¡Esta era la línea que faltaba!
+          break;
+        case 'alumno':
+          navigate('/alumno/dashboard');
+          break;
+        default:
+          // Si por alguna razón tiene un rol raro, lo mandamos al login
+          setError('Rol de usuario no reconocido');
+          setIsLoading(false);
+      }
+
     } catch (err) {
-      setError('Usuario o contraseña incorrectos');
+      console.error(err);
+      setError('Credenciales incorrectas o error de conexión');
       setIsLoading(false);
     }
   };
-
   return (
-    <div className="min-h-screen flex bg-cuchi-dark font-sans">
+    // FONDO GENERAL: Usamos tu color más claro #E4EBF0
+    <div className="min-h-screen flex items-center justify-center bg-cuchi-base p-4 font-sans">
       
-      {/* SECCIÓN IZQUIERDA: Arte / Branding (Oculto en celular) */}
-      <div className="hidden md:flex md:w-1/2 bg-cuchi-surface relative overflow-hidden items-center justify-center">
-        {/* Fondo con imagen de servidores y overlay oscuro */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src="https://images.unsplash.com/photo-1558494949-ef526b0042a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" 
-            alt="Servidores" 
-            className="w-full h-full object-cover opacity-40"
-          />
-          {/* Gradiente encima de la imagen */}
-          <div className="absolute inset-0 bg-gradient-to-t from-cuchi-dark via-transparent to-transparent"></div>
+      {/* TARJETA PRINCIPAL: Bordes muy redondeados (3xl) y sombra suave */}
+      <div className="bg-cuchi-card w-full max-w-5xl h-[600px] rounded-[2rem] shadow-2xl shadow-cuchi-primary/10 flex overflow-hidden">
+        
+        {/* LADO IZQUIERDO: Ilustración y Personalidad */}
+        <div className="hidden md:flex w-1/2 bg-cuchi-surface/30 relative flex-col items-center justify-center p-10">
+            
+            {/* Círculo decorativo de fondo */}
+            <div className="absolute w-96 h-96 bg-cuchi-secondary/20 rounded-full blur-3xl -top-10 -left-10"></div>
+            
+            {/* Logo o Nombre arriba a la izquierda */}
+            <div className="absolute top-8 left-8 flex items-center gap-2">
+                <div className="bg-cuchi-primary p-2 rounded-lg">
+                    <Zap size={20} className="text-white" />
+                </div>
+                <span className="font-bold text-cuchi-primary tracking-wide">CuchiNetworks</span>
+            </div>
+
+            {/* ILUSTRACIÓN 3D (Simulada con imagen) */}
+            {/* Esta imagen tiene estilo 3D colorido como tu referencia */}
+            <div className="relative z-10 transform hover:scale-105 transition-transform duration-500">
+                <img 
+                    src={loginImage} 
+                    alt="3D Server Illustration" 
+                    className="w-full max-w-md object-contain drop-shadow-xl"
+                />
+            </div>
+
+            <div className="mt-8 text-center relative z-10">
+                <h3 className="text-2xl font-bold text-cuchi-text mb-2">Gestiona tu laboratorio</h3>
+                <p className="text-cuchi-secondary font-medium">Control total de equipos e incidencias.</p>
+            </div>
         </div>
 
-        {/* Contenido flotante encima de la imagen */}
-        <div className="relative z-10 text-center px-10">
-          <div className="mb-6 inline-block p-4 rounded-full bg-cuchi-dark/50 backdrop-blur-sm border border-cuchi-accent/30 shadow-lg shadow-cuchi-accent/20">
-            <Server size={48} className="text-cuchi-accent" />
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">CuchiNetworks</h1>
-          <p className="text-cuchi-accent text-lg font-light">Gestión Inteligente de Infraestructura</p>
+        {/* LADO DERECHO: Formulario Limpio */}
+        <div className="w-full md:w-1/2 bg-white flex flex-col justify-center p-8 lg:p-16">
           
-          <div className="mt-8 grid grid-cols-2 gap-4 text-sm text-gray-400">
-            <div className="flex items-center justify-center gap-2">
-              <ShieldCheck size={18} />
-              <span>Acceso Seguro</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <Server size={18} />
-              <span>Monitoreo 24/7</span>
-            </div>
-          </div>
-        </div>
-      </div>
+          <div className="max-w-sm w-full mx-auto">
+            <h2 className="text-4xl font-bold text-cuchi-text mb-2">Hola de nuevo</h2>
+            <p className="text-gray-400 mb-10">Ingresa tus datos para continuar.</p>
 
-      {/* SECCIÓN DERECHA: El Formulario */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-grid-pattern relative">
-        <div className="w-full max-w-md space-y-8">
-          
-          {/* Encabezado Móvil (Solo se ve en celular) */}
-          <div className="text-center md:text-left">
-            <h2 className="text-3xl font-extrabold text-white tracking-tight">Bienvenido de nuevo</h2>
-            <p className="mt-2 text-sm text-gray-400">
-              Ingresa tus credenciales para acceder al panel de control.
+            {error && (
+              <div className="bg-red-50 text-red-500 text-sm rounded-xl p-3 mb-6 flex items-center animate-pulse">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {/* Input Email Estilo "Soft" */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-600 ml-1">Correo Electrónico</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-cuchi-secondary group-focus-within:text-cuchi-primary transition-colors" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    // ESTILO CLAVE: Fondo gris suave (#F3F4F6), sin bordes, redondeado grande
+                    className="block w-full pl-12 pr-4 py-4 bg-gray-50 border-transparent focus:bg-white focus:border-cuchi-primary focus:ring-4 focus:ring-cuchi-primary/10 rounded-2xl text-cuchi-text placeholder-gray-400 transition-all duration-200 font-medium outline-none"
+                    placeholder="nombre@ejemplo.com"
+                  />
+                </div>
+              </div>
+
+              {/* Input Password Estilo "Soft" */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-600 ml-1">Contraseña</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-cuchi-secondary group-focus-within:text-cuchi-primary transition-colors" />
+                  </div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="block w-full pl-12 pr-4 py-4 bg-gray-50 border-transparent focus:bg-white focus:border-cuchi-primary focus:ring-4 focus:ring-cuchi-primary/10 rounded-2xl text-cuchi-text placeholder-gray-400 transition-all duration-200 font-medium outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              {/* Botón Principal */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                // COLOR PRINCIPAL: #4180AB
+                className={`w-full flex items-center justify-center py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg shadow-cuchi-primary/30 transform transition-all duration-200 hover:-translate-y-1
+                  ${isLoading ? 'bg-cuchi-secondary cursor-not-allowed' : 'bg-cuchi-primary hover:shadow-xl hover:bg-[#366d95]'}`}
+              >
+                {isLoading ? (
+                   <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <>
+                    Ingresar ahora
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            <p className="mt-8 text-center text-sm text-gray-400">
+              ¿Olvidaste tu contraseña? <a href="#" className="text-cuchi-primary font-bold hover:underline">Recupérala aquí</a>
             </p>
           </div>
-
-          {/* Mensaje de Error */}
-          {error && (
-            <div className="bg-red-500/10 border border-red-500 text-red-400 text-sm rounded-lg p-4 flex items-center animate-pulse">
-              <Lock className="w-4 h-4 mr-2" />
-              {error}
-            </div>
-          )}
-
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              
-              {/* Input Email */}
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-500 group-focus-within:text-cuchi-accent transition-colors" />
-                </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-700 rounded-lg leading-5 bg-cuchi-surface text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cuchi-accent focus:border-transparent sm:text-sm transition-all"
-                  placeholder="correo@institucional.com"
-                />
-              </div>
-
-              {/* Input Password */}
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-500 group-focus-within:text-cuchi-accent transition-colors" />
-                </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-700 rounded-lg leading-5 bg-cuchi-surface text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cuchi-accent focus:border-transparent sm:text-sm transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            {/* Botón de Submit con Estado de Carga */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white 
-                ${isLoading ? 'bg-cuchi-primary/70 cursor-not-allowed' : 'bg-gradient-to-r from-cuchi-primary to-blue-600 hover:to-blue-700'}
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cuchi-accent focus:ring-offset-cuchi-dark transition-all shadow-lg shadow-blue-500/30`}
-            >
-              {isLoading ? (
-                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  Ingresar al Sistema
-                  <span className="absolute right-0 inset-y-0 flex items-center pr-3">
-                    <ArrowRight className="h-5 w-5 text-blue-200 group-hover:text-white transition-colors" />
-                  </span>
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Footer pequeño */}
-          <p className="mt-2 text-center text-xs text-gray-500">
-            &copy; 2025 CuchipuEntertainment. Todos los derechos reservados.
-          </p>
         </div>
       </div>
     </div>
