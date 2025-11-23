@@ -16,9 +16,10 @@ services:
     ports:
       - "3306:3306"
     volumes:
+      # VOLUMEN NOMBRADO (Estándar de Producción)
+      # Docker gestiona esto internamente, no lo ves en tu carpeta.
       - mysql_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    # HEALTHCHECK: Vital para que el Backend sepa cuándo MySQL está realmente listo
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s
@@ -34,20 +35,17 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # ¡OJO AQUÍ! Ya no es localhost ni 127.0.0.1. 
-      # Dentro de Docker, el host es el nombre del servicio: "db"
       - DB_HOST=db
       - DB_USER=CuchiNetworks
       - DB_PASSWORD=ositoBimbo
       - DB_NAME=CuchiNetworks
       - DB_PORT=3306
-      - JWT_SECRET=vainilla
+      - JWT_SECRET=tu_clave_super_secreta_y_larga
       - PORT=3000
     depends_on:
       db:
-        condition: service_healthy # Espera a que el healthcheck de la DB pase
+        condition: service_healthy
     volumes:
-      # Esto permite que si editas código en tu PC, se actualice en el contenedor (Hot Reload)
       - ./backend:/app
       - /app/node_modules
 
@@ -61,10 +59,11 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-      - backend # Espera a que el backend inicie
+      - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
 
+# DEFINICIÓN DEL VOLUMEN
 volumes:
   mysql_data:
