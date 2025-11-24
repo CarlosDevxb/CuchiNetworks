@@ -6,22 +6,40 @@ import {
     updateEquipo, 
     deleteEquipo 
 } from '../controllers/equipos.controller.js';
+import { upload } from '../middleware/upload.middleware.js';
 
-// Importamos seguridad (Solo admins pueden gestionar equipos)
-import { verifyToken, verifyAdmin } from '../middleware/auth.middleware.js';
-import { upload } from '../middleware/upload.middleware.js'; // Importar
+// Importamos los middlewares de seguridad
+import { verifyToken, verifyRole } from '../middleware/auth.middleware.js';
 
-// Actualiza la línea del PUT:
 const router = Router();
 
-// Todas las rutas requieren Token y ser Admin
-router.use(verifyToken, verifyAdmin);
-router.post('/', upload.single('imagen'), createEquipo);
-router.put('/:id', upload.single('imagen'), updateEquipo);
-router.get('/', getEquipos);
-router.get('/:id', getEquipoById);
-router.post('/', createEquipo);
-router.put('/:id', updateEquipo);
-router.delete('/:id', deleteEquipo);
+// 1. APLICAR TOKEN A TODO (Nadie entra sin login)
+router.use(verifyToken);
+
+// 2. DEFINIR REGLAS POR RUTA
+
+// LEER: Admin, Docente y Alumno pueden ver la lista (Ejemplo)
+// O si prefieres que solo Admin vea todo: verifyRole(['admin'])
+router.get('/', verifyRole(['admin', 'docente']), getEquipos);
+
+// LEER DETALLE: Igual que arriba
+router.get('/:id', verifyRole(['admin', 'docente']), getEquipoById);
+
+// CREAR: SOLO ADMIN
+router.post('/', 
+    verifyRole(['admin']), 
+    upload.single('imagen'), 
+    createEquipo
+);
+
+// ACTUALIZAR: SOLO ADMIN
+router.put('/:id', 
+    verifyRole(['admin']), 
+    upload.single('imagen'), 
+    updateEquipo
+);
+
+// ELIMINAR: SOLO ADMIN
+router.delete('/:id', verifyRole(['admin']), deleteEquipo);
 
 export default router;

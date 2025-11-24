@@ -7,7 +7,7 @@ import AuthRoutes from './routes/auth.routes.js';
 import equiposRoutes from './routes/equipos.routes.js';
 import ubicacionesRoutes from './routes/ubicaciones.routes.js';
 
-
+import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -42,6 +42,8 @@ app.get('/api/test-db', async (req, res) => {
     }
 });
 
+app.use(helmet());
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use('/api/auth', AuthRoutes);
 // Rutas de la API
 // ...

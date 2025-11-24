@@ -103,6 +103,13 @@ CREATE TABLE BitacoraUso (
     FOREIGN KEY (materia_id) REFERENCES Materias(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS TokenBlacklist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(512) NOT NULL,
+    fecha_expiracion DATETIME NOT NULL,
+    INDEX (token)
+); ENGINE=InnoDB;
+
 -- 5. TRIGGERS
 DELIMITER $$
 CREATE TRIGGER trg_reportes_check_insert

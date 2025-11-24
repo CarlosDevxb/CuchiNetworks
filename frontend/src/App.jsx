@@ -12,6 +12,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import EquiposPage from './pages/EquiposPage';
 import EquipoDetallePage from './pages/EquipoDetallePage';
 import EquipoCreatePage from './pages/EquipoCreatePage';
+import NotFoundPage from './pages/NotFoundPage';
 // Componente de Ruta Protegida
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
@@ -56,8 +57,11 @@ function App() {
         <Route path="dashboard" element={<div className="text-2xl text-cuchi-text font-bold">Bienvenido Alumno</div>} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/login" />} />
+
+
+      <Route path="*" element={<NotFoundPage/>} />
     </Routes>
+    
   );
 }
 
