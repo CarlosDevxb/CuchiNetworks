@@ -48,12 +48,12 @@ Una interfaz moderna, limpia y responsiva diseñada para reducir la carga cognit
 
 | **Acceso Seguro** | **Gestión de Inventario** |
 | :---: | :---: |
-| ![Login](https://via.placeholder.com/500x300?text=Login+Moderno+y+Seguro) | ![Inventario](https://via.placeholder.com/500x300?text=Tarjetas+de+Equipos) |
+| ![Login](/frontend/src/assets/githubImages/Login.png) | ![Inventario](/frontend/src/assets/githubImages/Inventarios.png) |
 | *Autenticación JWT con protección Anti-Bruteforce* | *Vista de tarjetas con estado en tiempo real* |
 
 | **Ficha Técnica** | **Bitácora Docente** |
 | :---: | :---: |
-| ![Detalle](https://via.placeholder.com/500x300?text=Detalle+Técnico) | ![Bitacora](https://via.placeholder.com/500x300?text=Registro+de+Clase) |
+| ![Detalle](/frontend/src/assets/githubImages/Detalles.png) | ![Bitacora](/frontend/src/assets/githubImages/Bitacora.png) |
 | *Datos técnicos dinámicos y edición visual* | *Control de asistencia y recursos usados* |
 
 ---
