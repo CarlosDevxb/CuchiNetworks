@@ -1,130 +1,102 @@
-<!-- prettier-ignore -->
-# 🖥️ CuchiNetworks
+# 🌐 CuchiNetworks
 
-> Sistema integral para la gestión de laboratorios de redes — Inventario, reportes y mantenimiento.
+> **Plataforma Integral de Gestión, Auditoría y Control para Laboratorios de Redes de Computadoras.**
 
-![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-yellow?style=for-the-badge) ![Licencia](https://img.shields.io/badge/Licencia-MIT-blue?style=for-the-badge) ![Versión](https://img.shields.io/badge/Versión-0.1.0-green?style=for-the-badge)
+![Estado](https://img.shields.io/badge/Estado-Alpha%20v1.0-blue?style=for-the-badge)
+![Arquitectura](https://img.shields.io/badge/Arquitectura-Microservicios%20Docker-blueviolet?style=for-the-badge)
+![Seguridad](https://img.shields.io/badge/Seguridad-OWASP%20Standard-green?style=for-the-badge)
 
-Breve: proyecto Full‑Stack containerizado pensado para centros educativos y laboratorios, con control de roles, registro de incidencias y panel administrativo.
+---
 
---
+## 💡 Visión del Proyecto
 
-**Tabla de contenidos**
+**CuchiNetworks** nace de la necesidad de modernizar la administración de infraestructura educativa y empresarial. No es solo un inventario; es un **Sistema Operativo para Laboratorios** que conecta el hardware físico con la actividad académica.
 
-- [Características](#características)
-- [Tecnologías](#tecnologías)
-- [Requisitos](#requisitos)
-- [Arranque rápido (Docker)](#arranque-rápido-docker)
-- [Desarrollo local](#desarrollo-local)
-- [Base de datos & Seeds](#base-de-datos--seeds)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Rutas y endpoints](#rutas-y-endpoints)
-- [Contribuir](#contribuir)
-- [Licencia](#licencia)
+El sistema permite una trazabilidad completa: desde saber qué router específico se utilizó en una práctica de "Enrutamiento Dinámico", hasta gestionar el ciclo de vida de una falla técnica reportada por un alumno.
 
---
+---
 
-## ✨ Características
+## 🚀 Características Principales
 
-- Gestión de equipos (inventario parcial)
-- Autenticación con JWT y control de roles (Admin, Teacher/Student)
-- Panel administrativo con métricas básicas
-- Subida y almacenamiento de archivos en `public/uploads`
-- Base de datos MySQL dockerizada con script de inicialización
+### 1. 🛡️ Gestión de Identidad y Seguridad (RBAC)
+El sistema implementa un control de acceso estricto basado en roles, garantizando que cada usuario tenga una experiencia personalizada y segura.
+* **Administrador:** Control total de infraestructura, usuarios y auditoría.
+* **Docente:** Gestión de clases, asistencia y reporte de incidentes.
+* **Alumno:** Acceso a perfil y herramientas de reporte.
+* **Seguridad:** Protección contra ataques de fuerza bruta, inyección SQL y XSS.
 
-## 🛠️ Tecnologías
+### 2. 🖥️ Inventario de Infraestructura Inteligente
+Más allá de una lista plana, CuchiNetworks entiende la naturaleza de los equipos de red.
+* **Especificaciones Dinámicas (JSON):** El sistema adapta los campos según el dispositivo. Si registras un *Router*, te pide interfaces y cables; si es una *PC*, te pide RAM y periféricos.
+* **Geolocalización Lógica:** Mapeo exacto de dispositivos por Zona (Isla, Rack, Mesa Central) y Posición Física.
+* **Evidencia Visual:** Registro fotográfico de cada activo.
 
-- Frontend: React + Vite + Tailwind CSS
-- Backend: Node.js + Express
-- Base de datos: MySQL (contenedor)
-- Orquestación: `docker-compose`
+### 3. 📅 Bitácora Académica y Auditoría
+El corazón operativo del laboratorio.
+* **Registro Dual:** Diferenciación entre clases **Teóricas** y **Prácticas**.
+* **Trazabilidad de Hardware:** En las sesiones prácticas, el docente registra qué equipos específicos se utilizaron, permitiendo auditar quién fue el último responsable de un dispositivo antes de una falla.
 
-## 📋 Requisitos
+### 4. 🎨 Experiencia de Usuario "Soft UI"
+Una interfaz moderna, limpia y responsiva diseñada para reducir la carga cognitiva.
+* **Diseño Visual:** Paleta de colores profesional (*Cuchi Blue*) y componentes visuales intuitivos.
+* **Feedback Inmediato:** Sistema de notificaciones (Toasts) no intrusivas.
+* **Navegación Contextual:** Menús que se adaptan dinámicamente al rol del usuario.
 
-- Docker y Docker Compose instalados en tu sistema.
-- Node.js (solo si quieres ejecutar frontend/backend localmente fuera de Docker).
+---
 
-## 🚀 Arranque rápido (Docker)
+## 📸 Galería de la Interfaz
 
-Levanta la aplicación (API, frontend y base de datos) con un solo comando:
+| **Acceso Seguro** | **Gestión de Inventario** |
+| :---: | :---: |
+| ![Login](https://via.placeholder.com/500x300?text=Login+Moderno+y+Seguro) | ![Inventario](https://via.placeholder.com/500x300?text=Tarjetas+de+Equipos) |
+| *Autenticación JWT con protección Anti-Bruteforce* | *Vista de tarjetas con estado en tiempo real* |
 
-```bash
-docker-compose up --build
-```
+| **Ficha Técnica** | **Bitácora Docente** |
+| :---: | :---: |
+| ![Detalle](https://via.placeholder.com/500x300?text=Detalle+Técnico) | ![Bitacora](https://via.placeholder.com/500x300?text=Registro+de+Clase) |
+| *Datos técnicos dinámicos y edición visual* | *Control de asistencia y recursos usados* |
 
-- Accede al frontend en `http://localhost:5173` (configurable en `vite.config.js`).
-- La API escucha según la configuración en `backend/index.js` y `docker-compose.yml`.
+---
 
-Para levantar en segundo plano:
+## 🛠️ Arquitectura Tecnológica
 
-```bash
-docker-compose up -d --build
-```
+CuchiNetworks está construido sobre un stack moderno, escalable y contenerizado, listo para despliegue en la nube (AWS).
 
-Detener y eliminar contenedores:
 
-```bash
-docker-compose down
-```
 
-## 🧩 Desarrollo local
+### 🔹 Frontend (Cliente)
+* **React 18 + Vite:** Para una experiencia de usuario ultra rápida (SPA).
+* **Tailwind CSS:** Diseño atómico y consistente.
+* **Axios Interceptors:** Gestión centralizada de seguridad y tokens.
 
-Si prefieres ejecutar servicios por separado:
+### 🔹 Backend (API RESTful)
+* **Node.js + Express:** Lógica de negocio asíncrona y veloz.
+* **Middleware de Seguridad:** `Helmet` (Headers), `Express-Validator` (Sanitización), `Rate-Limit`.
+* **Gestión de Archivos:** `Multer` para el manejo seguro de evidencias fotográficas.
 
-- Backend (desde la carpeta `backend`):
+### 🔹 Base de Datos (Persistencia)
+* **MySQL 8.0:** Motor relacional robusto.
+* **JSON Native Support:** Almacenamiento híbrido para especificaciones técnicas flexibles.
+* **Transacciones ACID:** Integridad garantizada en operaciones críticas (como el registro de bitácoras complejas).
 
-```bash
-cd backend
-npm install
-npm run start
-```
+### 🔹 Infraestructura (DevOps)
+* **Docker & Docker Compose:** Entorno de desarrollo y producción replicable al 100%.
+* **Volúmenes Persistentes:** Seguridad de datos ante reinicios.
 
-- Frontend (desde la carpeta `frontend`):
+---
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## 🌟 Futuro del Proyecto (Roadmap)
 
-Configura las variables de entorno necesarias en el backend (si no usas Docker, crea un `.env` siguiendo el ejemplo en `backend/`).
+El desarrollo continúa con módulos avanzados planeados:
+* [ ] **Tablero Kanban:** Gestión visual del flujo de reparaciones.
+* [ ] **Generador de QR:** Etiquetas físicas para escaneo rápido de inventario.
+* [ ] **Dashboard Analítico:** Métricas de uso de laboratorio y equipos más solicitados.
 
-## 🗄️ Base de datos & Seeds
+---
 
-El archivo `database/init.sql` contiene las tablas iniciales. Para poblar usuarios de ejemplo existe `backend/scripts/seedUsers.js`.
+### 👨‍💻 Equipo de Desarrollo
 
-Si trabajas con Docker Compose, la DB se inicializa automáticamente al crear el contenedor.
+Diseñado y Desarrollado por **[Tu Nombre]**.
+*Líder Técnico y Arquitecto de Software Full-Stack.*
 
-## 📁 Estructura del proyecto (resumen)
-
-- `backend/` — API REST, controladores, rutas y middleware.
-- `frontend/` — Aplicación React con Vite y Tailwind.
-- `database/` — Script `init.sql` para inicializar la base.
-- `docker-compose.yml` — Orquesta contenedores (frontend, backend, db).
-
-## 🔌 Rutas y endpoints (rápido)
-
-Algunas rutas principales (ver `backend/routes/` para la lista completa):
-
-- `POST /api/auth/login` — Autenticación
-- `GET /api/equipos` — Listar equipos
-- `POST /api/equipos` — Crear equipo (Admin)
-- `GET /api/ubicaciones` — Listar ubicaciones
-- `POST /api/bitacora` — Registrar incidencia
-
-> Revisa `backend/routes` y `backend/controllers` para detalles y parámetros.
-
-## 🧰 Comandos útiles
-
-- Levantar todo: `docker-compose up --build`
-- Levantar solo backend: `cd backend && npm run start`
-- Levantar solo frontend: `cd frontend && npm run dev`
-- Ejecutar seed de usuarios: `node backend/scripts/seedUsers.js` (asegúrate de variables/DB)
-
-## 🤝 Contribuir
-
-1. Haz fork y crea una rama con tu feature: `git checkout -b feat/mi-feature`
-2. Crea cambios claros y pruebas si aplica
-3. Abre un PR describiendo los cambios
-
-Para contribuciones mayores, abre un issue primero para discutir el diseño.
+&copy; 2025 CuchiNetworks.
