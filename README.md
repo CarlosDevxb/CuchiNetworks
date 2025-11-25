@@ -96,7 +96,7 @@ El desarrollo continúa con módulos avanzados planeados:
 
 ### 👨‍💻 Equipo de Desarrollo
 
-Diseñado y Desarrollado por **[Tu Nombre]**.
+Diseñado y Desarrollado por **CarlosDevxb**.
 *Líder Técnico y Arquitecto de Software Full-Stack.*
 
 &copy; 2025 CuchiNetworks.
