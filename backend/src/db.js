@@ -16,6 +16,7 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
+
 // Probamos la conexión al iniciar
 pool.getConnection()
     .then(connection => {
