@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, UploadCloud, Server, Monitor, Cpu } from 'lucide-react';
-
+import { useToast } from '../context/ToastContext';
 const EquipoCreatePage = () => {
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
-  
+  const toast = useToast();
   // ESTADO DEL FORMULARIO PRINCIPAL
   const [formData, setFormData] = useState({
     nombre_equipo: '',
@@ -134,12 +135,11 @@ const EquipoCreatePage = () => {
         }
       });
 
-      alert("Equipo registrado con éxito");
+      toast.success("Equipo registrado exitosamente.");
       navigate('/admin/equipos');
 
     } catch (error) {
-      console.error("Error creando equipo:", error);
-      alert("Error al registrar. Revisa la consola.");
+     toast.error("Error al registrar el equipo. Intenta nuevamente.");
     } finally {
       setLoading(false);
     }
