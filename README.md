@@ -1,42 +1,102 @@
-# 🖥️ CuchiNetworks
+# 🌐 CuchiNetworks
 
-> **Sistema Integral de Gestión para Laboratorios de Redes de Computadoras.**
+> **Plataforma Integral de Gestión, Auditoría y Control para Laboratorios de Redes de Computadoras.**
 
-![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-yellow?style=for-the-badge)
-![Licencia](https://img.shields.io/badge/Licencia-MIT-blue?style=for-the-badge)
-![Versión](https://img.shields.io/badge/Versión-0.1.0-green?style=for-the-badge)
-
-**CuchiNetworks** es una aplicación Full-Stack diseñada para administrar el inventario, reportes de fallas y mantenimiento de equipos en un laboratorio educativo o empresarial. Permite a los administradores gestionar incidencias en tiempo real y controlar el acceso mediante roles.
+![Estado](https://img.shields.io/badge/Estado-Alpha%20v1.0-blue?style=for-the-badge)
+![Arquitectura](https://img.shields.io/badge/Arquitectura-Microservicios%20Docker-blueviolet?style=for-the-badge)
+![Seguridad](https://img.shields.io/badge/Seguridad-OWASP%20Standard-green?style=for-the-badge)
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 💡 Visión del Proyecto
 
-El proyecto utiliza una arquitectura moderna basada en **contenedores** y separación de responsabilidades.
+**CuchiNetworks** nace de la necesidad de modernizar la administración de infraestructura educativa y empresarial. No es solo un inventario; es un **Sistema Operativo para Laboratorios** que conecta el hardware físico con la actividad académica.
 
-| Área | Tecnologías |
-| :--- | :--- |
-| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB) ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white) |
-| **Backend** | ![Nodejs](https://img.shields.io/badge/Node.js-43853D?style=flat-square&logo=node.js&logoColor=white) ![Express.js](https://img.shields.io/badge/Express.js-404D59?style=flat-square) ![JWT](https://img.shields.io/badge/JWT-black?style=flat-square&logo=JSON%20web%20tokens) |
-| **Base de Datos** | ![MySQL](https://img.shields.io/badge/MySQL-005C84?style=flat-square&logo=mysql&logoColor=white) (Dockerizada) |
-| **Infraestructura** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Linux](https://img.shields.io/badge/Linux_Mint-87CF3E?style=flat-square&logo=linux-mint&logoColor=white) |
+El sistema permite una trazabilidad completa: desde saber qué router específico se utilizó en una práctica de "Enrutamiento Dinámico", hasta gestionar el ciclo de vida de una falla técnica reportada por un alumno.
 
 ---
 
-## 🚀 Funcionalidades (Roadmap)
+## 🚀 Características Principales
 
-### ✅ Implementado
-- [x] **Entorno Dockerizado:** Base de datos MySQL autogestionada con scripts de inicialización (`init.sql`).
-- [x] **Autenticación Segura:** Login con JWT, encriptación Bcrypt y protección de rutas (Middleware).
-- [x] **Dashboard Administrativo:** Visualización de estadísticas en tiempo real (Equipos totales, reportes activos, mantenimientos).
-- [x] **UI/UX Moderna:** Interfaz responsiva con Tailwind CSS, modo oscuro ("Dark Mode") y diseño personalizado.
-- [x] **Gestión de Roles:** Redirección inteligente y vistas separadas para Admin y Alumnos.
+### 1. 🛡️ Gestión de Identidad y Seguridad (RBAC)
+El sistema implementa un control de acceso estricto basado en roles, garantizando que cada usuario tenga una experiencia personalizada y segura.
+* **Administrador:** Control total de infraestructura, usuarios y auditoría.
+* **Docente:** Gestión de clases, asistencia y reporte de incidentes.
+* **Alumno:** Acceso a perfil y herramientas de reporte.
+* **Seguridad:** Protección contra ataques de fuerza bruta, inyección SQL y XSS.
 
-### 🚧 En Progreso / Pendiente
-- [ ] **Inventario (CRUD):** Tabla para agregar, editar y dar de baja equipos.
-- [ ] **Sistema de Reportes:** Formulario para que alumnos reporten fallas en equipos específicos.
-- [ ] **Tablero Kanban:** Gestión visual del flujo de reparaciones.
-- [ ] **Perfiles de Usuario:** Edición de datos personales y avatares.
+### 2. 🖥️ Inventario de Infraestructura Inteligente
+Más allá de una lista plana, CuchiNetworks entiende la naturaleza de los equipos de red.
+* **Especificaciones Dinámicas (JSON):** El sistema adapta los campos según el dispositivo. Si registras un *Router*, te pide interfaces y cables; si es una *PC*, te pide RAM y periféricos.
+* **Geolocalización Lógica:** Mapeo exacto de dispositivos por Zona (Isla, Rack, Mesa Central) y Posición Física.
+* **Evidencia Visual:** Registro fotográfico de cada activo.
+
+### 3. 📅 Bitácora Académica y Auditoría
+El corazón operativo del laboratorio.
+* **Registro Dual:** Diferenciación entre clases **Teóricas** y **Prácticas**.
+* **Trazabilidad de Hardware:** En las sesiones prácticas, el docente registra qué equipos específicos se utilizaron, permitiendo auditar quién fue el último responsable de un dispositivo antes de una falla.
+
+### 4. 🎨 Experiencia de Usuario "Soft UI"
+Una interfaz moderna, limpia y responsiva diseñada para reducir la carga cognitiva.
+* **Diseño Visual:** Paleta de colores profesional (*Cuchi Blue*) y componentes visuales intuitivos.
+* **Feedback Inmediato:** Sistema de notificaciones (Toasts) no intrusivas.
+* **Navegación Contextual:** Menús que se adaptan dinámicamente al rol del usuario.
 
 ---
-Hecho con 💻 y ☕.
+
+## 📸 Galería de la Interfaz
+
+| **Acceso Seguro** | **Gestión de Inventario** |
+| :---: | :---: |
+| ![Login](https://via.placeholder.com/500x300?text=Login+Moderno+y+Seguro) | ![Inventario](https://via.placeholder.com/500x300?text=Tarjetas+de+Equipos) |
+| *Autenticación JWT con protección Anti-Bruteforce* | *Vista de tarjetas con estado en tiempo real* |
+
+| **Ficha Técnica** | **Bitácora Docente** |
+| :---: | :---: |
+| ![Detalle](https://via.placeholder.com/500x300?text=Detalle+Técnico) | ![Bitacora](https://via.placeholder.com/500x300?text=Registro+de+Clase) |
+| *Datos técnicos dinámicos y edición visual* | *Control de asistencia y recursos usados* |
+
+---
+
+## 🛠️ Arquitectura Tecnológica
+
+CuchiNetworks está construido sobre un stack moderno, escalable y contenerizado, listo para despliegue en la nube (AWS).
+
+
+
+### 🔹 Frontend (Cliente)
+* **React 18 + Vite:** Para una experiencia de usuario ultra rápida (SPA).
+* **Tailwind CSS:** Diseño atómico y consistente.
+* **Axios Interceptors:** Gestión centralizada de seguridad y tokens.
+
+### 🔹 Backend (API RESTful)
+* **Node.js + Express:** Lógica de negocio asíncrona y veloz.
+* **Middleware de Seguridad:** `Helmet` (Headers), `Express-Validator` (Sanitización), `Rate-Limit`.
+* **Gestión de Archivos:** `Multer` para el manejo seguro de evidencias fotográficas.
+
+### 🔹 Base de Datos (Persistencia)
+* **MySQL 8.0:** Motor relacional robusto.
+* **JSON Native Support:** Almacenamiento híbrido para especificaciones técnicas flexibles.
+* **Transacciones ACID:** Integridad garantizada en operaciones críticas (como el registro de bitácoras complejas).
+
+### 🔹 Infraestructura (DevOps)
+* **Docker & Docker Compose:** Entorno de desarrollo y producción replicable al 100%.
+* **Volúmenes Persistentes:** Seguridad de datos ante reinicios.
+
+---
+
+## 🌟 Futuro del Proyecto (Roadmap)
+
+El desarrollo continúa con módulos avanzados planeados:
+* [ ] **Tablero Kanban:** Gestión visual del flujo de reparaciones.
+* [ ] **Generador de QR:** Etiquetas físicas para escaneo rápido de inventario.
+* [ ] **Dashboard Analítico:** Métricas de uso de laboratorio y equipos más solicitados.
+
+---
+
+### 👨‍💻 Equipo de Desarrollo
+
+Diseñado y Desarrollado por **[Tu Nombre]**.
+*Líder Técnico y Arquitecto de Software Full-Stack.*
+
+&copy; 2025 CuchiNetworks.

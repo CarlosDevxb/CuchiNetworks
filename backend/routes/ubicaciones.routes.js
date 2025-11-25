@@ -6,34 +6,20 @@ import { validateResult } from '../middleware/validator.middleware.js';
 
 const router = Router();
 
-// 1. VALIDACIONES PARA CREAR UBICACIÓN
 const validacionesUbicacion = [
-    body('nombre')
-        .notEmpty().withMessage('El nombre es obligatorio')
-        .isLength({ max: 100 }).withMessage('El nombre es muy largo')
-        .trim()
-        .escape(), // Sanitizar
-    body('descripcion')
-        .optional()
-        .isLength({ max: 500 })
-        .trim()
-        .escape(),
-    body('tipo_zona')
-        .isIn(['isla', 'mesa_central', 'bodega', 'otro'])
-        .withMessage('Tipo de zona inválido')
+    body('nombre').notEmpty().trim().escape(),
+    body('tipo_zona').isIn(['isla', 'mesa_central', 'bodega', 'otro'])
 ];
 
-// 2. RUTAS
+// 1. Todos con Token
+router.use(verifyToken);
 
-// Ver lista: Admin y Docente
-router.get('/', verifyToken, verifyRole(['admin', 'docente']), getUbicaciones);
+// 2. LEER: Admin y Docente (Para llenar los dropdowns)
+router.get('/', verifyRole(['admin', 'docente']), getUbicaciones);
+router.get('/:id', verifyRole(['admin', 'docente']), getUbicacionById);
 
-// Ver detalle (con equipos): Admin y Docente
-router.get('/:id', verifyToken, verifyRole(['admin', 'docente']), getUbicacionById);
-
-// Crear: SOLO ADMIN + Validaciones
+// 3. CREAR: Solo Admin
 router.post('/', 
-    verifyToken, 
     verifyRole(['admin']), 
     validacionesUbicacion, 
     validateResult, 

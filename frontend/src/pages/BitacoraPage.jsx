@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Calendar, Clock, User, BookOpen, Search, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Calendar, Clock, Search, FileText, 
+  Eye, Briefcase, BookOpen 
+} from 'lucide-react';
 
 const BitacoraPage = () => {
+  const navigate = useNavigate();
   const [registros, setRegistros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // 1. CARGAR DATOS AL INICIO
   useEffect(() => {
     const fetchBitacora = async () => {
         try {
@@ -16,33 +22,37 @@ const BitacoraPage = () => {
             });
             setRegistros(res.data);
             setLoading(false);
-        } catch (e) { console.error(e); setLoading(false); }
+        } catch (e) { 
+            console.error(e); 
+            setLoading(false); 
+        }
     };
     fetchBitacora();
   }, []);
 
-  // Filtrado simple en el cliente
+  // 2. FILTRADO EN CLIENTE (Buscador)
   const filteredRegistros = registros.filter(reg => 
       reg.nombre_docente.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reg.nombre_materia.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Formateador de fecha
+  // 3. FORMATEADOR DE FECHA
   const formatDate = (dateString) => {
-      return new Date(dateString).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      return new Date(dateString).toLocaleDateString('es-ES', { 
+          weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' 
+      });
   };
 
   return (
     <div className="fade-in max-w-6xl mx-auto">
       
-      {/* HEADER */}
+      {/* HEADER Y BUSCADOR */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-8 gap-4">
         <div>
             <h2 className="text-3xl font-bold text-cuchi-text">Bitácora de Uso</h2>
             <p className="text-gray-500">Historial de clases y actividades en el laboratorio.</p>
         </div>
         
-        {/* BARRA DE BÚSQUEDA */}
         <div className="relative w-full md:w-72">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search size={18} className="text-gray-400"/>
@@ -50,14 +60,14 @@ const BitacoraPage = () => {
             <input 
                 type="text" 
                 placeholder="Buscar docente o materia..." 
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-cuchi-primary shadow-sm text-sm"
+                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-cuchi-primary shadow-sm text-sm transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
         </div>
       </div>
 
-      {/* TABLA */}
+      {/* TABLA DE DATOS */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
           {loading ? (
               <div className="p-10 text-center text-gray-400">Cargando historial...</div>
@@ -74,17 +84,20 @@ const BitacoraPage = () => {
                               <th className="p-5 font-bold">Fecha / Horario</th>
                               <th className="p-5 font-bold">Docente</th>
                               <th className="p-5 font-bold">Materia / Actividad</th>
-                              <th className="p-5 font-bold">Observaciones</th>
+                              <th className="p-5 font-bold">Tipo</th>
+                              <th className="p-5 font-bold text-right">Acciones</th>
                           </tr>
                       </thead>
                       <tbody className="text-sm text-gray-700 divide-y divide-gray-50">
                           {filteredRegistros.map((reg) => (
                               <tr key={reg.id} className="hover:bg-blue-50/30 transition-colors">
                                   
-                                  {/* FECHA */}
+                                  {/* COLUMNA: FECHA */}
                                   <td className="p-5">
                                       <div className="flex items-center gap-3 font-medium text-cuchi-text">
-                                          <div className="bg-blue-50 p-2 rounded-lg text-cuchi-primary"><Calendar size={18}/></div>
+                                          <div className="bg-blue-50 p-2 rounded-lg text-cuchi-primary">
+                                              <Calendar size={18}/>
+                                          </div>
                                           <div>
                                               <span className="block capitalize">{formatDate(reg.fecha)}</span>
                                               <span className="text-xs text-gray-400 font-normal flex items-center gap-1 mt-1">
@@ -94,10 +107,10 @@ const BitacoraPage = () => {
                                       </div>
                                   </td>
 
-                                  {/* DOCENTE */}
+                                  {/* COLUMNA: DOCENTE */}
                                   <td className="p-5">
                                       <div className="flex items-center gap-2">
-                                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs">
+                                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-xs uppercase">
                                               {reg.nombre_docente.charAt(0)}
                                           </div>
                                           <div>
@@ -107,24 +120,39 @@ const BitacoraPage = () => {
                                       </div>
                                   </td>
 
-                                  {/* MATERIA */}
+                                  {/* COLUMNA: MATERIA */}
                                   <td className="p-5">
                                       <span className="font-semibold text-cuchi-primary block">{reg.nombre_materia}</span>
-                                      <span className="text-xs text-gray-400">{reg.carrera || 'General'}</span>
+                                      <span className="text-xs text-gray-400 block mb-1">{reg.carrera || 'General'}</span>
                                       {reg.tema_visto && (
-                                          <div className="mt-1 text-xs bg-gray-100 px-2 py-1 rounded w-fit text-gray-600">
-                                              Tema: {reg.tema_visto}
+                                          <div className="text-xs bg-gray-50 px-2 py-1 rounded w-fit text-gray-500 border border-gray-100 truncate max-w-[150px]" title={reg.tema_visto}>
+                                              {reg.tema_visto}
                                           </div>
                                       )}
                                   </td>
 
-                                  {/* OBSERVACIONES */}
+                                  {/* COLUMNA: TIPO (Práctica/Teórica) */}
                                   <td className="p-5">
-                                      {reg.observaciones ? (
-                                          <span className="text-gray-600 italic">"{reg.observaciones}"</span>
+                                      {reg.tipo_clase === 'practica' ? (
+                                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 text-purple-700 text-xs font-bold uppercase tracking-wide border border-purple-200">
+                                              <Briefcase size={12}/> Práctica
+                                          </span>
                                       ) : (
-                                          <span className="text-gray-300">-</span>
+                                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-xs font-bold uppercase tracking-wide border border-gray-200">
+                                              <BookOpen size={12}/> Teórica
+                                          </span>
                                       )}
+                                  </td>
+
+                                  {/* COLUMNA: ACCIONES (Ver Detalle) */}
+                                  <td className="p-5 text-right">
+                                      <button 
+                                        onClick={() => navigate(`/admin/bitacora/${reg.id}`)} 
+                                        className="p-2 rounded-xl bg-white border border-gray-200 text-gray-400 hover:bg-cuchi-primary hover:text-white hover:border-cuchi-primary transition-all shadow-sm"
+                                        title="Ver Detalle Completo"
+                                      >
+                                          <Eye size={18}/>
+                                      </button>
                                   </td>
                               </tr>
                           ))}

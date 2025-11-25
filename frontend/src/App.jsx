@@ -19,6 +19,9 @@ import UbicacionCreatePage from "./pages/UbicacionCreatePage";
 import DocentesPage from "./pages/DocentesPage";
 import MateriasPage from "./pages/MateriasPage";
 import BitacoraPage from "./pages/BitacoraPage";
+import BitacoraDetallePage from "./pages/BitacoraDetallePage";
+import RegistrarClasePage from "./pages/RegistrarClasePage";
+
 // Componente de Ruta Protegida
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, loading } = useAuth();
@@ -61,6 +64,7 @@ function App() {
         <Route path="materias" element={<MateriasPage />} />
         <Route path="docentes" element={<DocentesPage />} />
         <Route path="bitacora" element={<BitacoraPage />} />
+        <Route path="bitacora/:id" element={<BitacoraDetallePage />} />
       </Route>
       {/* --- RUTAS DOCENTE --- */}
       <Route
@@ -79,10 +83,8 @@ function App() {
             </div>
           }
         />
-        <Route
-          path="registrar-uso"
-          element={<div>Aquí irá el formulario de asistencia</div>}
-        />
+
+<Route path="registrar-uso" element={<RegistrarClasePage />} />
       </Route>
 
       {/* --- RUTAS ALUMNO --- */}

@@ -123,6 +123,25 @@ CREATE TABLE DocenteMaterias (
     FOREIGN KEY (docente_id) REFERENCES Usuarios(id) ON DELETE CASCADE,
     FOREIGN KEY (materia_id) REFERENCES Materias(id) ON DELETE CASCADE
 );
+-- 1. Agregar el tipo de clase a la Bitácora
+ALTER TABLE BitacoraUso 
+ADD COLUMN tipo_clase ENUM('teorica', 'practica') NOT NULL DEFAULT 'teorica' AFTER materia_id;
+
+-- 2. Crear la tabla de relación (Detalle de uso)
+CREATE TABLE BitacoraDispositivos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bitacora_id INT NOT NULL, -- Relación con la clase
+    equipo_id INT NOT NULL,   -- Relación con el equipo usado
+    
+    FOREIGN KEY (bitacora_id) REFERENCES BitacoraUso(id) ON DELETE CASCADE,
+    FOREIGN KEY (equipo_id) REFERENCES Equipos(id) ON DELETE CASCADE
+);
+
+-- 3. (Opcional) Vincular Reportes a una clase específica
+-- Esto permite saber si un reporte nació durante una clase concreta
+ALTER TABLE Reportes
+ADD COLUMN bitacora_id INT NULL,
+ADD FOREIGN KEY (bitacora_id) REFERENCES BitacoraUso(id) ON DELETE SET NULL;
 
 -- 5. TRIGGERS
 DELIMITER $$
