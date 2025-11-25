@@ -12,8 +12,9 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import equiposRoutes from './routes/equipos.routes.js';
 import ubicacionesRoutes from './routes/ubicaciones.routes.js';
-
-// Configuración de __dirname
+import materiasRoutes from './routes/materias.routes.js';
+import docentesRoutes from './routes/docentes.routes.js';
+import bitacoraRoutes from './routes/bitacora.routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -55,6 +56,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/equipos', equiposRoutes);
 app.use('/api/ubicaciones', ubicacionesRoutes);
 
+app.use('/api/materias', materiasRoutes);
+app.use('/api/docentes', docentesRoutes);
+app.use('/api/bitacora', bitacoraRoutes);
+// Configuración de __dirnam
 // Arrancar Servidor
 app.listen(PORT, () => {
     console.log(`\n📡 Servidor Backend corriendo en http://localhost:${PORT}`);

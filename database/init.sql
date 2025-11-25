@@ -109,6 +109,20 @@ CREATE TABLE IF NOT EXISTS TokenBlacklist (
     fecha_expiracion DATETIME NOT NULL,
     INDEX (token)
 ); ENGINE=InnoDB;
+-- 1. Agregar horarios base al perfil del usuario
+ALTER TABLE Usuarios
+ADD COLUMN horario_entrada TIME NULL,
+ADD COLUMN horario_salida TIME NULL;
+
+-- 2. Tabla Intermedia (Relación Muchos a Muchos)
+-- Un docente tiene muchas materias, una materia la dan muchos docentes.
+CREATE TABLE DocenteMaterias (
+    docente_id INT NOT NULL,
+    materia_id INT NOT NULL,
+    PRIMARY KEY (docente_id, materia_id),
+    FOREIGN KEY (docente_id) REFERENCES Usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (materia_id) REFERENCES Materias(id) ON DELETE CASCADE
+);
 
 -- 5. TRIGGERS
 DELIMITER $$
