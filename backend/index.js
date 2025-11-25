@@ -1,54 +1,66 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import pool from './src/db.js'; // Importamos la conexión que acabamos de crear
-import dashboardRoutes from './routes/dashboard.routes.js';
-import AuthRoutes from './routes/auth.routes.js';
-import equiposRoutes from './routes/equipos.routes.js';
-import ubicacionesRoutes from './routes/ubicaciones.routes.js';
-
-
 import path from 'path';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
-// Configuración para __dirname en ES Modules
+// Rutas
+import pool from './src/db.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import equiposRoutes from './routes/equipos.routes.js';
+import ubicacionesRoutes from './routes/ubicaciones.routes.js';
+import materiasRoutes from './routes/materias.routes.js';
+import docentesRoutes from './routes/docentes.routes.js';
+import bitacoraRoutes from './routes/bitacora.routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Middlewares ---
-app.use(cors()); // Permite que React (puerto 5173) hable con este server
-app.use(morgan('dev')); // Muestra logs bonitos en la consola
-app.use(express.json()); // Permite recibir datos JSON en los POST
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-// --- Rutas de Prueba ---
+// --- SEGURIDAD NIVEL 1: HEADERS (HELMET) ---
+// crossOriginResourcePolicy: "cross-origin" permite que el Frontend cargue las imágenes
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 
-// 1. Ruta básica para ver si el server vive
+// --- SEGURIDAD NIVEL 2: RATE LIMIT GLOBAL ---
+// Permite 100 peticiones cada 15 minutos por IP
+const apiLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000, 
+	max: 100, 
+	standardHeaders: true,
+	legacyHeaders: false,
+    message: { message: "Demasiadas peticiones desde esta IP, intenta más tarde." }
+});
+app.use('/api', apiLimiter);
+
+// --- MIDDLEWARES GENERALES ---
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
+
+// Servir imágenes estáticas
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+// --- RUTAS ---
 app.get('/', (req, res) => {
     res.send('API de CuchiNetworks funcionando 🚀');
 });
 
-// 2. Ruta para probar la Base de Datos (¡La prueba de fuego!)
-app.get('/api/test-db', async (req, res) => {
-    try {
-        const [rows] = await pool.query('SELECT 1 + 1 AS resultado');
-        res.json({ 
-            mensaje: 'Conexión a DB exitosa', 
-            calculo_db: rows[0].resultado 
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-app.use('/api/auth', AuthRoutes);
-// Rutas de la API
-// ...
-app.use('/api/ubicaciones', ubicacionesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/equipos', equiposRoutes);
-// --- Arrancar Servidor ---
+app.use('/api/ubicaciones', ubicacionesRoutes);
+
+app.use('/api/materias', materiasRoutes);
+app.use('/api/docentes', docentesRoutes);
+app.use('/api/bitacora', bitacoraRoutes);
+// Configuración de __dirnam
+// Arrancar Servidor
 app.listen(PORT, () => {
     console.log(`\n📡 Servidor Backend corriendo en http://localhost:${PORT}`);
 });

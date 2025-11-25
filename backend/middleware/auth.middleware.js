@@ -1,27 +1,29 @@
 import jwt from 'jsonwebtoken';
+import pool from '../src/db.js';
 
-export const verifyToken = (req, res, next) => {
+// 1. VERIFICAR TOKEN Y BLACKLIST
+export const verifyToken = async (req, res, next) => {
     try {
-        // 1. Buscar el token en la cabecera (Header)
-        const token = req.headers.authorization;
-
-        // El token suele venir como: "Bearer eyJhbGciOi..."
-        // Verificamos que exista
-        if (!token) {
-            return res.status(403).json({ message: "¡Alto ahí! No proporcionaste un token." });
+        const tokenHeader = req.headers.authorization;
+        
+        if (!tokenHeader) {
+            return res.status(403).json({ message: "Acceso denegado. No se proporcionó token." });
         }
 
-        // Limpiamos la palabra "Bearer " si viene incluida
-        const tokenReal = token.split(" ")[1] || token;
+        // Limpiar el prefijo "Bearer " si existe
+        const token = tokenHeader.split(" ")[1] || tokenHeader;
 
-        // 2. Verificar la firma del token con tu SEGRETO
-        const decoded = jwt.verify(tokenReal, process.env.JWT_SECRET);
+        // A. VERIFICAR SI ESTÁ EN LISTA NEGRA (Logout previo)
+        const [rows] = await pool.query('SELECT id FROM TokenBlacklist WHERE token = ?', [token]);
+        if (rows.length > 0) {
+            return res.status(401).json({ message: "Sesión revocada. Por favor inicia sesión nuevamente." });
+        }
 
-        // 3. Si es válido, guardamos los datos del usuario en la request
-        // Esto nos servirá para saber QUIÉN está pidiendo los datos
+        // B. VERIFICAR FIRMA Y EXPIRACIÓN
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Guardamos al usuario en la request para usarlo en el siguiente paso
         req.user = decoded;
-
-        // 4. Dejar pasar a la siguiente función (el controlador)
         next();
 
     } catch (error) {
@@ -29,11 +31,23 @@ export const verifyToken = (req, res, next) => {
     }
 };
 
-// Middleware extra para verificar roles (Ej. solo admins)
-export const verifyAdmin = (req, res, next) => {
-    if (req.user && req.user.rol === 'admin') {
-        next();
-    } else {
-        return res.status(403).json({ message: "Acceso denegado. Se requiere rol de Administrador." });
-    }
+// 2. VERIFICAR ROLES (Dinámico)
+// Se usa así: verifyRole(['admin', 'docente'])
+export const verifyRole = (rolesPermitidos) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(500).json({ message: "Error de seguridad: Usuario no procesado." });
+        }
+
+        if (rolesPermitidos.includes(req.user.rol)) {
+            next(); // El usuario tiene uno de los roles permitidos
+        } else {
+            return res.status(403).json({ 
+                message: `Acceso prohibido. Se requiere rol: ${rolesPermitidos.join(' o ')}` 
+            });
+        }
+    };
 };
+
+// Middleware legacy (por si lo usabas en otro lado, opcional)
+export const verifyAdmin = verifyRole(['admin']);
