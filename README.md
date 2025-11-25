@@ -1,141 +1,130 @@
+<!-- prettier-ignore -->
 # 🖥️ CuchiNetworks
 
-> **Sistema Integral de Gestión para Laboratorios de Redes de Computadoras.**
+> Sistema integral para la gestión de laboratorios de redes — Inventario, reportes y mantenimiento.
 
-![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-yellow?style=for-the-badge)
-![Licencia](https://img.shields.io/badge/Licencia-MIT-blue?style=for-the-badge)
-![Versión](https://img.shields.io/badge/Versión-0.1.0-green?style=for-the-badge)
+![Estado](https://img.shields.io/badge/Estado-En%20Desarrollo-yellow?style=for-the-badge) ![Licencia](https://img.shields.io/badge/Licencia-MIT-blue?style=for-the-badge) ![Versión](https://img.shields.io/badge/Versión-0.1.0-green?style=for-the-badge)
 
-**CuchiNetworks** es una aplicación Full-Stack diseñada para administrar el inventario, reportes de fallas y mantenimiento de equipos en un laboratorio educativo o empresarial. Permite a los administradores gestionar incidencias en tiempo real y controlar el acceso mediante roles.
+Breve: proyecto Full‑Stack containerizado pensado para centros educativos y laboratorios, con control de roles, registro de incidencias y panel administrativo.
 
----
+--
 
-## 🛠️ Stack Tecnológico
+**Tabla de contenidos**
 
-El proyecto utiliza una arquitectura moderna basada en **contenedores** y separación de responsabilidades.
+- [Características](#características)
+- [Tecnologías](#tecnologías)
+- [Requisitos](#requisitos)
+- [Arranque rápido (Docker)](#arranque-rápido-docker)
+- [Desarrollo local](#desarrollo-local)
+- [Base de datos & Seeds](#base-de-datos--seeds)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [Rutas y endpoints](#rutas-y-endpoints)
+- [Contribuir](#contribuir)
+- [Licencia](#licencia)
 
-| Área | Tecnologías |
-| :--- | :--- |
-| **Frontend** | ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB) ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white) |
-| **Backend** | ![Nodejs](https://img.shields.io/badge/Node.js-43853D?style=flat-square&logo=node.js&logoColor=white) ![Express.js](https://img.shields.io/badge/Express.js-404D59?style=flat-square) ![JWT](https://img.shields.io/badge/JWT-black?style=flat-square&logo=JSON%20web%20tokens) |
-| **Base de Datos** | ![MySQL](https://img.shields.io/badge/MySQL-005C84?style=flat-square&logo=mysql&logoColor=white) (Dockerizada) |
-| **Infraestructura** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Linux](https://img.shields.io/badge/Linux_Mint-87CF3E?style=flat-square&logo=linux-mint&logoColor=white) |
+--
 
----
+## ✨ Características
 
-## 🚀 Funcionalidades (Roadmap)
+- Gestión de equipos (inventario parcial)
+- Autenticación con JWT y control de roles (Admin, Teacher/Student)
+- Panel administrativo con métricas básicas
+- Subida y almacenamiento de archivos en `public/uploads`
+- Base de datos MySQL dockerizada con script de inicialización
 
-### ✅ Implementado
-- [x] **Entorno Dockerizado:** Base de datos MySQL autogestionada con scripts de inicialización (`init.sql`).
-- [x] **Autenticación Segura:** Login con JWT, encriptación Bcrypt y protección de rutas (Middleware).
-- [x] **Dashboard Administrativo:** Visualización de estadísticas en tiempo real (Equipos totales, reportes activos, mantenimientos).
-- [x] **UI/UX Moderna:** Interfaz responsiva con Tailwind CSS, modo oscuro ("Dark Mode") y diseño personalizado.
-- [x] **Gestión de Roles:** Redirección inteligente y vistas separadas para Admin y Alumnos.
+## 🛠️ Tecnologías
 
-### 🚧 En Progreso / Pendiente
-- [ ] **Inventario (CRUD):** Tabla para agregar, editar y dar de baja equipos.
-- [ ] **Sistema de Reportes:** Formulario para que alumnos reporten fallas en equipos específicos.
-- [ ] **Tablero Kanban:** Gestión visual del flujo de reparaciones.
-- [ ] **Perfiles de Usuario:** Edición de datos personales y avatares.
+- Frontend: React + Vite + Tailwind CSS
+- Backend: Node.js + Express
+- Base de datos: MySQL (contenedor)
+- Orquestación: `docker-compose`
 
----
+## 📋 Requisitos
 
-## ⚙️ Instalación y Configuración
+- Docker y Docker Compose instalados en tu sistema.
+- Node.js (solo si quieres ejecutar frontend/backend localmente fuera de Docker).
 
-Sigue estos pasos para levantar el proyecto en tu entorno local de desarrollo.
+## 🚀 Arranque rápido (Docker)
 
-### 1. Prerrequisitos
-* Node.js (v18 o superior)
-* Docker y Docker Compose
-* Git
+Levanta la aplicación (API, frontend y base de datos) con un solo comando:
 
-### 2. Clonar el repositorio
 ```bash
-git clone [https://github.com/TU_USUARIO/cuchi-networks.git](https://github.com/TU_USUARIO/cuchi-networks.git)
-cd cuchi-networks
-3. Configurar Variables de Entorno
+docker-compose up --build
 ```
-### Crea un archivo .env dentro de la carpeta backend/ con el siguiente contenido:
+
+- Accede al frontend en `http://localhost:5173` (configurable en `vite.config.js`).
+- La API escucha según la configuración en `backend/index.js` y `docker-compose.yml`.
+
+Para levantar en segundo plano:
+
 ```bash
-PORT=3000
-DB_HOST=127.0.0.1
-DB_USER=cuchi_admin
-DB_PASSWORD=securepassword
-DB_NAME=cuchi_networks_db
-DB_PORT=3306
-JWT_SECRET=pon_aqui_una_clave_super_secreta_y_larga
+docker-compose up -d --build
 ```
-### 4. Iniciar la Base de Datos
+
+Detener y eliminar contenedores:
+
 ```bash
-docker compose up -d
-
-    Nota: La primera vez que se ejecute, Docker creará el contenedor MySQL e importará automáticamente las tablas definidas en database/init.sql.
+docker-compose down
 ```
-### 5. Instalar Dependencias
 
-Backend:
-Bash
+## 🧩 Desarrollo local
 
+Si prefieres ejecutar servicios por separado:
+
+- Backend (desde la carpeta `backend`):
+
+```bash
 cd backend
 npm install
+npm run start
+```
 
-Frontend:
-Bash
+- Frontend (desde la carpeta `frontend`):
 
-cd ../frontend
-npm install
-
-▶️ Ejecución
-
-Para desarrollar, se recomienda tener 3 terminales abiertas:
-
-Terminal 1 (Base de Datos - Solo si no está corriendo):
-Bash
-
-docker compose start
-
-Terminal 2 (Backend API):
-Bash
-
-cd backend
-npm run dev
-
-Terminal 3 (Frontend React):
-Bash
-
+```bash
 cd frontend
+npm install
 npm run dev
+```
 
-Accede a la aplicación en tu navegador: http://localhost:5173
+Configura las variables de entorno necesarias en el backend (si no usas Docker, crea un `.env` siguiendo el ejemplo en `backend/`).
 
-📂 Estructura del Proyecto
+## 🗄️ Base de datos & Seeds
 
-Plaintext
+El archivo `database/init.sql` contiene las tablas iniciales. Para poblar usuarios de ejemplo existe `backend/scripts/seedUsers.js`.
 
-cuchi-networks/
-├── docker-compose.yml      # Orquestación de contenedores (MySQL)
-├── database/
-│   └── init.sql            # Esquema inicial de la BD (Tablas, Triggers)
-├── backend/
-│   ├── src/
-│   ├── routes/             # Rutas de la API (Auth, Dashboard)
-│   ├── middleware/         # Seguridad (Verificación JWT, Roles)
-│   └── index.js            # Punto de entrada del servidor Express
-└── frontend/
-    ├── src/
-    │   ├── components/     # Componentes reutilizables
-    │   ├── context/        # Estado global (AuthContext)
-    │   ├── layouts/        # Estructuras de página (DashboardLayout)
-    │   ├── pages/          # Vistas (Login, AdminDashboard)
-    │   └── App.jsx         # Enrutamiento principal
-    └── tailwind.config.js  # Configuración de estilos y tema
+Si trabajas con Docker Compose, la DB se inicializa automáticamente al crear el contenedor.
 
-🔑 Credenciales de Prueba
+## 📁 Estructura del proyecto (resumen)
 
-Para acceder como administrador (si has ejecutado el seed o creado el usuario):
+- `backend/` — API REST, controladores, rutas y middleware.
+- `frontend/` — Aplicación React con Vite y Tailwind.
+- `database/` — Script `init.sql` para inicializar la base.
+- `docker-compose.yml` — Orquesta contenedores (frontend, backend, db).
 
-    Email: jefe@cuchi.net
+## 🔌 Rutas y endpoints (rápido)
 
-    Password: admin123
+Algunas rutas principales (ver `backend/routes/` para la lista completa):
 
-Hecho con 💻 y ☕.
+- `POST /api/auth/login` — Autenticación
+- `GET /api/equipos` — Listar equipos
+- `POST /api/equipos` — Crear equipo (Admin)
+- `GET /api/ubicaciones` — Listar ubicaciones
+- `POST /api/bitacora` — Registrar incidencia
+
+> Revisa `backend/routes` y `backend/controllers` para detalles y parámetros.
+
+## 🧰 Comandos útiles
+
+- Levantar todo: `docker-compose up --build`
+- Levantar solo backend: `cd backend && npm run start`
+- Levantar solo frontend: `cd frontend && npm run dev`
+- Ejecutar seed de usuarios: `node backend/scripts/seedUsers.js` (asegúrate de variables/DB)
+
+## 🤝 Contribuir
+
+1. Haz fork y crea una rama con tu feature: `git checkout -b feat/mi-feature`
+2. Crea cambios claros y pruebas si aplica
+3. Abre un PR describiendo los cambios
+
+Para contribuciones mayores, abre un issue primero para discutir el diseño.
