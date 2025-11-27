@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Quitamos axios
+import client from '../config/axios'; // ✅ Usamos el cliente configurado
 import { 
   Calendar, Clock, Search, FileText, 
   Eye, Briefcase, BookOpen 
@@ -16,10 +16,8 @@ const BitacoraPage = () => {
   useEffect(() => {
     const fetchBitacora = async () => {
         try {
-            const token = localStorage.getItem('cuchi_token');
-            const res = await axios.get('http://localhost:3000/api/bitacora', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            // ✅ CORRECCIÓN: Usamos client.get y quitamos headers manuales
+            const res = await client.get('/bitacora');
             setRegistros(res.data);
             setLoading(false);
         } catch (e) { 

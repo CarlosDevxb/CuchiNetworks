@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../context/ToastContext';
 import { Save, CheckCircle, Server, Monitor, Layout } from 'lucide-react';
+import client from '../config/axios';
 
 const RegistrarClasePage = () => {
   const navigate = useNavigate();
@@ -33,8 +34,8 @@ const RegistrarClasePage = () => {
         const config = { headers: { Authorization: `Bearer ${token}` } };
         try {
             const [resMat, resUb] = await Promise.all([
-                axios.get('http://localhost:3000/api/materias', config),
-                axios.get('http://localhost:3000/api/ubicaciones', config)
+                client.get('/materias', config),
+                client.get('/ubicaciones', config)
             ]);
             setMaterias(resMat.data);
             setUbicaciones(resUb.data);
@@ -52,7 +53,7 @@ const RegistrarClasePage = () => {
       try {
           const token = localStorage.getItem('cuchi_token');
           // Reutilizamos el endpoint que te trae ubicación + sus equipos
-          const res = await axios.get(`http://localhost:3000/api/ubicaciones/${id}`, {
+          const res = await client.get(`/ubicaciones/${id}`, {
               headers: { Authorization: `Bearer ${token}` }
           });
           setEquiposPorUbicacion(res.data.equipos || []);
@@ -75,7 +76,7 @@ const RegistrarClasePage = () => {
       setLoading(true);
       try {
           const token = localStorage.getItem('cuchi_token');
-          await axios.post('http://localhost:3000/api/bitacora', formData, {
+          await client.post('/bitacora', formData, {
               headers: { Authorization: `Bearer ${token}` }
           });
           toast.success("Clase registrada correctamente");

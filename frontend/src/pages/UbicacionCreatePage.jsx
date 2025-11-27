@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, MapPin, Server, Layout, Box, CheckCircle } from 'lucide-react';
+import client from '../config/axios';
 
 const UbicacionCreatePage = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const UbicacionCreatePage = () => {
 
     try {
       const token = localStorage.getItem('cuchi_token');
-      await axios.post('http://localhost:3000/api/ubicaciones', formData, {
+      await client.post('/ubicaciones', formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Plus, HardDrive, Wifi, Tv, Monitor, Printer, Smartphone, MapPin } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import client from '../config/axios';
 
 const EquiposPage = () => {
   const [equipos, setEquipos] = useState([]);
@@ -18,7 +19,7 @@ const EquiposPage = () => {
             toast.error("Sesión expirada");
             return;
         }
-        const response = await axios.get('http://localhost:3000/api/equipos', {
+        const response = await client.get('/equipos', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setEquipos(response.data);

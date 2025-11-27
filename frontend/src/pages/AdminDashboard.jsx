@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { useToast } from '../context/ToastContext'; // Nuevo
 import { Server, AlertTriangle, Wrench } from 'lucide-react';
+import client from '../config/axios';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -16,7 +16,7 @@ const AdminDashboard = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('cuchi_token');
-        const response = await axios.get('http://localhost:3000/api/dashboard/stats', {
+        const response = await client.get('/dashboard/stats', {
             headers: { Authorization: `Bearer ${token}` }
         });
         setStats(response.data);

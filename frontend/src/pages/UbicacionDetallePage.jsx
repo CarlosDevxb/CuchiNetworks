@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, MapPin, Server, HardDrive, Monitor, Wifi, Printer } from 'lucide-react';
+import client from '../config/axios';
 
 const UbicacionDetallePage = () => {
   const { id } = useParams();
@@ -14,7 +15,7 @@ const UbicacionDetallePage = () => {
     const fetchData = async () => {
         try {
             const token = localStorage.getItem('cuchi_token');
-            const res = await axios.get(`http://localhost:3000/api/ubicaciones/${id}`, {
+            const res = await client.get(`/ubicaciones/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setData(res.data);

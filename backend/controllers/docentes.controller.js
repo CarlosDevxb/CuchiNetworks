@@ -1,122 +1,107 @@
 import pool from '../src/db.js';
 import bcrypt from 'bcryptjs';
 
-// 1. OBTENER DOCENTES CON SUS MATERIAS (VERSIÓN SEGURA)
+// 1. OBTENER DOCENTES (JOIN Usuarios + Docentes + Clases)
 export const getDocentes = async (req, res) => {
     try {
-        console.log("🔍 Buscando docentes...");
-
+        // Query Actualizado: JOIN con tabla Docentes
         const [rows] = await pool.query(`
             SELECT 
-                u.id, u.nombre, u.email, u.horario_entrada, u.horario_salida,
-                u.rol,
-                COALESCE(
-                    JSON_ARRAYAGG(
-                        IF(m.id IS NOT NULL, JSON_OBJECT('id', m.id, 'nombre', m.nombre), NULL)
-                    ), '[]'
-                ) as materias_raw
+                u.id, 
+                d.nombre_completo as nombre, -- Alias para compatibilidad con frontend
+                u.email, 
+                d.numero_empleado,
+                d.titulo_academico,
+                -- Subquery para traer clases (JSON)
+                (
+                    SELECT JSON_ARRAYAGG(
+                        JSON_OBJECT(
+                            'id', c.id,
+                            'materia_id', m.id,
+                            'materia_nombre', m.nombre,
+                            'grupo', c.grupo,
+                            'dia', c.dia_semana,
+                            'inicio', c.hora_inicio,
+                            'fin', c.hora_fin
+                        )
+                    )
+                    FROM Clases c
+                    JOIN Materias m ON c.materia_id = m.id
+                    WHERE c.docente_id = u.id
+                ) as clases_asignadas
             FROM Usuarios u
-            LEFT JOIN DocenteMaterias dm ON u.id = dm.docente_id
-            LEFT JOIN Materias m ON dm.materia_id = m.id
+            JOIN Docentes d ON u.id = d.usuario_id
             WHERE u.rol = 'docente'
-            GROUP BY u.id
         `);
         
-        console.log(`✅ Se encontraron ${rows.length} docentes.`);
-
-        // PROCESAMIENTO SEGURO DE DATOS
-        const cleanRows = rows.map(row => {
-            let materias = [];
-            
-            // Intento robusto de parsear el JSON
-            try {
-                if (typeof row.materias_raw === 'string') {
-                    materias = JSON.parse(row.materias_raw);
-                } else if (Array.isArray(row.materias_raw)) {
-                    materias = row.materias_raw;
-                }
-            } catch (e) {
-                console.error(`⚠️ Error parseando materias para usuario ${row.id}`, e);
-                materias = [];
-            }
-
-            // Filtrar nulos (por el LEFT JOIN)
-            const materiasLimpio = materias.filter(m => m !== null);
-
-            return {
-                id: row.id,
-                nombre: row.nombre,
-                email: row.email,
-                horario_entrada: row.horario_entrada,
-                horario_salida: row.horario_salida,
-                materias_asignadas: materiasLimpio
-            };
-        });
+        // Limpieza de JSON
+        const cleanRows = rows.map(row => ({
+            ...row,
+            clases_asignadas: row.clases_asignadas || [] // Asegurar array vacío si es null
+        }));
 
         res.json(cleanRows);
-
     } catch (error) {
-        console.error("❌ Error en getDocentes:", error);
+        console.error("Error getDocentes:", error);
         res.status(500).json({ message: error.message });
     }
 };
-// 2. CREAR O EDITAR DOCENTE (Upsert lógico)
-export const saveDocente = async (req, res) => {
-    const { id, nombre, email, password, horario_entrada, horario_salida, materias_ids } = req.body;
-    if (horario_entrada && horario_salida) {
-        if (horario_entrada >= horario_salida) {
-            return res.status(400).json({ message: "La hora de salida debe ser posterior a la de entrada." });
-        }
-    }
 
+// 2. GUARDAR DOCENTE (INSERTAR EN 2 TABLAS)
+export const saveDocente = async (req, res) => {
+    // Nota: 'nombre' viene del frontend, lo mapearemos a 'nombre_completo'
+    const { id, nombre, email, password } = req.body;
+    
     let connection;
     try {
         connection = await pool.getConnection();
-        await connection.beginTransaction(); // Iniciar transacción para asegurar integridad
+        await connection.beginTransaction();
 
         let docenteId = id;
 
-        // A. Si es nuevo (no trae ID), insertamos usuario
+        // A. CREAR NUEVO
         if (!id) {
+            // 1. Insertar en Usuarios (Padre)
             const salt = await bcrypt.genSalt(10);
             const hash = await bcrypt.hash(password, salt);
+            
             const [resUser] = await connection.query(
-                'INSERT INTO Usuarios (nombre, email, password_hash, rol, horario_entrada, horario_salida) VALUES (?, ?, ?, "docente", ?, ?)',
-                [nombre, email, hash, horario_entrada, horario_salida]
+                'INSERT INTO Usuarios (email, password_hash, rol) VALUES (?, ?, "docente")',
+                [email, hash]
             );
             docenteId = resUser.insertId;
-        } else {
-            // B. Si es edición, actualizamos datos básicos
+
+            // 2. Insertar en Docentes (Hija)
             await connection.query(
-                'UPDATE Usuarios SET nombre=?, email=?, horario_entrada=?, horario_salida=? WHERE id=?',
-                [nombre, email, horario_entrada, horario_salida, id]
+                'INSERT INTO Docentes (usuario_id, nombre_completo) VALUES (?, ?)',
+                [docenteId, nombre]
             );
-            // Si mandan password nueva, la actualizamos aparte
+
+        } else {
+            // B. ACTUALIZAR EXISTENTE
+            // 1. Actualizar email en Padre
+            await connection.query('UPDATE Usuarios SET email=? WHERE id=?', [email, id]);
+            
+            // 2. Actualizar password si viene
             if (password) {
                 const salt = await bcrypt.genSalt(10);
                 const hash = await bcrypt.hash(password, salt);
                 await connection.query('UPDATE Usuarios SET password_hash=? WHERE id=?', [hash, id]);
             }
+
+            // 3. Actualizar nombre en Hija
+            await connection.query('UPDATE Docentes SET nombre_completo=? WHERE usuario_id=?', [nombre, id]);
         }
 
-        // C. ACTUALIZAR MATERIAS (Borrar anteriores e insertar nuevas)
-        // Solo si se envió el array de materias
-        if (materias_ids && Array.isArray(materias_ids)) {
-            // 1. Borrar relaciones viejas
-            await connection.query('DELETE FROM DocenteMaterias WHERE docente_id = ?', [docenteId]);
-            
-            // 2. Insertar nuevas (si hay)
-            if (materias_ids.length > 0) {
-                const values = materias_ids.map(mId => [docenteId, mId]);
-                await connection.query('INSERT INTO DocenteMaterias (docente_id, materia_id) VALUES ?', [values]);
-            }
-        }
+        // NOTA: La asignación de CLASES se maneja en clases.controller.js ahora, 
+        // así que quitamos la lógica vieja de DocenteMaterias aquí para simplificar.
 
         await connection.commit();
-        res.json({ message: "Docente guardado correctamente" });
+        res.json({ message: "Docente guardado correctamente", id: docenteId });
 
     } catch (error) {
         if (connection) await connection.rollback();
+        if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "El correo ya está registrado." });
         res.status(500).json({ message: error.message });
     } finally {
         if (connection) connection.release();
