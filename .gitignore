@@ -5,3 +5,4 @@ ORDEN DEVOPS
 # Ignorar carpeta de datos de DB local
 mysql_data/
 database/init.sql
+respaldo_cuchi.sql

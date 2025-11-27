@@ -63,7 +63,12 @@ export const getDocentes = async (req, res) => {
 // 2. CREAR O EDITAR DOCENTE (Upsert lógico)
 export const saveDocente = async (req, res) => {
     const { id, nombre, email, password, horario_entrada, horario_salida, materias_ids } = req.body;
-    
+    if (horario_entrada && horario_salida) {
+        if (horario_entrada >= horario_salida) {
+            return res.status(400).json({ message: "La hora de salida debe ser posterior a la de entrada." });
+        }
+    }
+
     let connection;
     try {
         connection = await pool.getConnection();
