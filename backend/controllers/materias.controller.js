@@ -11,12 +11,80 @@ export const getMaterias = async (req, res) => {
 
 export const createMateria = async (req, res) => {
     const { nombre, carrera, semestre } = req.body;
+    
+    // 1. Validación básica
+    if (!nombre || !carrera) {
+        return res.status(400).json({ message: "Nombre y Carrera son obligatorios" });
+    }
+
     try {
         const [result] = await pool.query(
             'INSERT INTO Materias (nombre, carrera, semestre) VALUES (?, ?, ?)',
             [nombre, carrera, semestre]
         );
-        res.status(201).json({ id: result.insertId, message: "Materia creada" });
+        res.status(201).json({ id: result.insertId, message: "Materia creada correctamente" });
+    } catch (error) {
+        // 2. Capturar error de duplicado (UNIQUE en DB)
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ message: "Ya existe una materia con ese nombre." });
+        }
+        res.status(500).json({ message: error.message });
+    }
+};
+// ... (tus funciones getMaterias y createMateria siguen igual) ...
+
+// 3. ACTUALIZAR MATERIA
+export const updateMateria = async (req, res) => {
+    const { id } = req.params;
+    const { nombre, carrera, semestre } = req.body;
+    try {
+        const [result] = await pool.query(
+            'UPDATE Materias SET nombre=?, carrera=?, semestre=? WHERE id=?',
+            [nombre, carrera, semestre, id]
+        );
+        if (result.affectedRows === 0) return res.status(404).json({ message: "Materia no encontrada" });
+        res.json({ message: "Materia actualizada" });
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') return res.status(400).json({ message: "Ya existe otra materia con ese nombre" });
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// 4. ELIMINAR MATERIA (Con validación de dependencias)
+export const deleteMateria = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // A. VERIFICAR SI TIENE DOCENTES ASIGNADOS
+        const [docentes] = await pool.query(
+            'SELECT COUNT(*) as total FROM DocenteMaterias WHERE materia_id = ?', 
+            [id]
+        );
+        
+        if (docentes[0].total > 0) {
+            return res.status(409).json({ 
+                message: `No se puede eliminar: Hay ${docentes[0].total} docente(s) impartiendo esta materia.` 
+            });
+        }
+
+        // B. VERIFICAR SI HAY BITÁCORAS (Historial)
+        const [bitacoras] = await pool.query(
+            'SELECT COUNT(*) as total FROM BitacoraUso WHERE materia_id = ?', 
+            [id]
+        );
+
+        if (bitacoras[0].total > 0) {
+            return res.status(409).json({ 
+                message: `No se puede eliminar: Existen ${bitacoras[0].total} registros de clases con esta materia en el historial.` 
+            });
+        }
+
+        // C. SI PASA LAS VALIDACIONES, BORRAMOS
+        const [result] = await pool.query('DELETE FROM Materias WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) return res.status(404).json({ message: "Materia no encontrada" });
+        
+        res.json({ message: "Materia eliminada correctamente" });
+
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

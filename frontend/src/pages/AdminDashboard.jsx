@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-// ❌ BORRA ESTA LÍNEA: import DashboardLayout from '../layouts/DashboardLayout';
+import { useToast } from '../context/ToastContext'; // Nuevo
+import { Server, AlertTriangle, Wrench } from 'lucide-react';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -9,36 +10,31 @@ const AdminDashboard = () => {
     equipos_mantenimiento: 0
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/dashboard/stats');
+        const token = localStorage.getItem('cuchi_token');
+        const response = await axios.get('http://localhost:3000/api/dashboard/stats', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
         setStats(response.data);
         setLoading(false);
       } catch (err) {
         console.error(err);
-        setError("No se pudieron cargar los datos.");
+        toast.error("No se pudieron cargar las estadísticas"); // Toast
         setLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  // ❌ ELIMINAMOS <DashboardLayout> QUE ENVOLVÍA TODO
   return (
-    <div className="fade-in"> {/* Opcional: un div simple contenedor */}
-      
+    <div className="fade-in max-w-7xl mx-auto">
       <h2 className="text-3xl font-bold text-cuchi-text mb-2">Panel de Administrador</h2>
-      <p className="text-gray-400 mb-8">Resumen general del laboratorio.</p>
+      <p className="text-gray-400 mb-8">Resumen general del estado del laboratorio.</p>
       
-      {error && (
-        <div className="bg-red-50 text-red-500 p-4 rounded-xl mb-6 border border-red-100">
-          {error}
-        </div>
-      )}
-
       {loading ? (
         <div className="flex justify-center h-64 items-center">
            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cuchi-primary"></div>
@@ -46,25 +42,46 @@ const AdminDashboard = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* TARJETA 1 */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Equipos Totales</h3>
-            <p className="text-5xl font-bold text-cuchi-primary mt-4">{stats.total_equipos}</p>
-            <span className="text-sm text-gray-400 font-medium mt-2 block">Inventariados</span>
+          {/* Total Equipos */}
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-lg transition-all border border-gray-100 group cursor-default">
+            <div className="flex justify-between items-start">
+                <div>
+                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Equipos Totales</h3>
+                    <p className="text-5xl font-bold text-cuchi-text mt-2">{stats.total_equipos}</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-2xl text-cuchi-primary group-hover:scale-110 transition-transform">
+                    <Server size={28}/>
+                </div>
+            </div>
+            <span className="text-sm text-gray-400 font-medium mt-4 block">Dispositivos inventariados</span>
           </div>
 
-          {/* TARJETA 2 */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">Reportes Activos</h3>
-            <p className="text-5xl font-bold text-red-500 mt-4">{stats.reportes_activos}</p>
-            <span className="text-sm text-red-300 font-medium mt-2 block">Requieren atención</span>
+          {/* Reportes */}
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-lg transition-all border border-gray-100 group cursor-default">
+            <div className="flex justify-between items-start">
+                <div>
+                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Reportes Activos</h3>
+                    <p className="text-5xl font-bold text-red-500 mt-2">{stats.reportes_activos}</p>
+                </div>
+                <div className="p-3 bg-red-50 rounded-2xl text-red-500 group-hover:scale-110 transition-transform">
+                    <AlertTriangle size={28}/>
+                </div>
+            </div>
+            <span className="text-sm text-red-300 font-medium mt-4 block">Requieren atención inmediata</span>
           </div>
 
-          {/* TARJETA 3 */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow border border-gray-100">
-            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest">En Mantenimiento</h3>
-            <p className="text-5xl font-bold text-yellow-500 mt-4">{stats.equipos_mantenimiento}</p>
-            <span className="text-sm text-yellow-400 font-medium mt-2 block">Fuera de servicio</span>
+          {/* Mantenimiento */}
+          <div className="bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-lg transition-all border border-gray-100 group cursor-default">
+            <div className="flex justify-between items-start">
+                <div>
+                    <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">En Mantenimiento</h3>
+                    <p className="text-5xl font-bold text-yellow-500 mt-2">{stats.equipos_mantenimiento}</p>
+                </div>
+                <div className="p-3 bg-yellow-50 rounded-2xl text-yellow-500 group-hover:scale-110 transition-transform">
+                    <Wrench size={28}/>
+                </div>
+            </div>
+            <span className="text-sm text-yellow-400 font-medium mt-4 block">Fuera de servicio temporal</span>
           </div>
 
         </div>

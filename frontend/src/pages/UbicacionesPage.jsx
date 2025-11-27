@@ -2,31 +2,31 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Box, Plus, Loader2, Server, Layout } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 
 const UbicacionesPage = () => {
   const [ubicaciones, setUbicaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const toast = useToast();
 
   useEffect(() => {
-    fetchUbicaciones();
-  }, []);
-
-  const fetchUbicaciones = async () => {
-    try {
+    const fetchUbicaciones = async () => {
+      try {
         const token = localStorage.getItem('cuchi_token');
         const res = await axios.get('http://localhost:3000/api/ubicaciones', {
             headers: { Authorization: `Bearer ${token}` }
         });
         setUbicaciones(res.data);
         setLoading(false);
-    } catch (error) {
-        console.error(error);
+      } catch (error) {
+        toast.error("Error cargando zonas");
         setLoading(false);
-    }
-  };
+      }
+    };
+    fetchUbicaciones();
+  }, []);
 
-  // Icono según tipo
   const getIcon = (tipo) => {
       switch(tipo) {
           case 'isla': return <Server size={24} className="text-blue-500"/>;
@@ -37,29 +37,29 @@ const UbicacionesPage = () => {
   };
 
   return (
-    <div className="fade-in">
+    <div className="fade-in max-w-7xl mx-auto">
       <div className="flex justify-between items-center mb-8">
         <div>
             <h2 className="text-3xl font-bold text-cuchi-text">Ubicaciones</h2>
             <p className="text-gray-500">Zonas físicas del laboratorio.</p>
         </div>
         <button 
-            onClick={() => navigate('/admin/ubicaciones/nueva')} // Ruta que crearemos después
-            className="bg-cuchi-primary text-white px-6 py-3 rounded-2xl shadow-md hover:bg-blue-700 transition-all flex items-center gap-2 font-bold"
+            onClick={() => navigate('/admin/ubicaciones/nueva')}
+            className="bg-cuchi-primary text-white px-6 py-3 rounded-2xl shadow-md hover:bg-blue-700 transition-all flex items-center gap-2 font-bold active:scale-95"
         >
             <Plus size={20} /> Nueva Zona
         </button>
       </div>
 
       {loading ? (
-          <div className="flex justify-center mt-20"><Loader2 className="animate-spin text-cuchi-primary" /></div>
+          <div className="flex justify-center mt-20"><Loader2 className="animate-spin text-cuchi-primary h-10 w-10" /></div>
       ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {ubicaciones.map(ub => (
                   <div 
                     key={ub.id} 
                     onClick={() => navigate(`/admin/ubicaciones/${ub.id}`)}
-                    className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group"
+                    className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group"
                   >
                       <div className="flex items-start justify-between mb-4">
                           <div className="p-3 bg-gray-50 rounded-2xl group-hover:bg-blue-50 transition-colors">
