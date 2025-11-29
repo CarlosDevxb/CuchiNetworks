@@ -21,6 +21,8 @@ import MateriasPage from "./pages/MateriasPage";
 import BitacoraPage from "./pages/BitacoraPage";
 import BitacoraDetallePage from "./pages/BitacoraDetallePage";
 import RegistrarClasePage from "./pages/RegistrarClasePage";
+import UsuariosPage from "./pages/UsuariosPage";
+import CargaAcademicaPage from "./pages/CargaAcademicaPage";
 
 // Componente de Ruta Protegida
 const ProtectedRoute = ({ children, requiredRole }) => {
@@ -51,8 +53,10 @@ function App() {
           </ProtectedRoute>
         }
       >
+        <Route path="usuarios" element={<UsuariosPage />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="equipos" element={<EquiposPage />} />
+        <Route path="carga-academica" element={<CargaAcademicaPage />} />
         <Route path="equipos/nuevo" element={<EquipoCreatePage />} />{" "}
         {/* <--- AQUÍ, ANTES DEL ID */}
         <Route path="equipos/:id" element={<EquipoDetallePage />} />

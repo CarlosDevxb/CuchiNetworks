@@ -1,10 +1,10 @@
-import pool from '../src/db.js';
+import pool from '../src/db.js'; // Ruta ajustada a tu estructura
 
 // 1. REGISTRAR CLASE (Docente)
 export const createRegistro = async (req, res) => {
     const { materia_id, tipo_clase, hora_entrada, hora_salida, tema_visto, observaciones, equipos_ids } = req.body;
     
-    // El ID viene del token (middleware verifyToken)
+    // Obtenemos el ID del usuario desde el token decodificado
     const usuario_id = req.user.id; 
 
     let connection;
@@ -12,7 +12,8 @@ export const createRegistro = async (req, res) => {
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        // A. Insertar el registro principal en BitacoraUso
+        // A. Insertar en BitacoraUso
+        // Nota: La FK usuario_id apunta a Usuarios.id, lo cual es correcto.
         const [resBitacora] = await connection.query(
             `INSERT INTO BitacoraUso (usuario_id, materia_id, tipo_clase, hora_entrada, hora_salida, tema_visto, observaciones) 
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -21,7 +22,7 @@ export const createRegistro = async (req, res) => {
 
         const bitacoraId = resBitacora.insertId;
 
-        // B. Si es práctica y seleccionaron equipos, insertar la relación en BitacoraDispositivos
+        // B. Insertar relación con Equipos (si es práctica)
         if (tipo_clase === 'practica' && equipos_ids && Array.isArray(equipos_ids) && equipos_ids.length > 0) {
             const values = equipos_ids.map(eqId => [bitacoraId, eqId]);
             await connection.query(
@@ -45,8 +46,6 @@ export const createRegistro = async (req, res) => {
 // 2. LISTADO GENERAL (ADMIN)
 export const getBitacora = async (req, res) => {
     try {
-        // CAMBIO CLAVE: Hacemos JOIN con 'Docentes' para sacar el nombre real
-        // Si quisieras soportar que Admin también registre bitácora, usaríamos LEFT JOIN con ambas tablas
         const [rows] = await pool.query(`
             SELECT 
                 b.id, 
@@ -57,7 +56,7 @@ export const getBitacora = async (req, res) => {
                 b.tema_visto, 
                 b.observaciones,
                 
-                -- Datos del Docente (Desde la tabla hija)
+                -- Datos del Docente (Obtenidos de la tabla hija Docentes)
                 d.nombre_completo as nombre_docente, 
                 u.email as email_docente,
                 
@@ -65,12 +64,12 @@ export const getBitacora = async (req, res) => {
                 m.nombre as nombre_materia, 
                 m.carrera,
                 
-                -- Conteo de equipos usados
+                -- Conteo rápido de equipos
                 (SELECT COUNT(*) FROM BitacoraDispositivos bd WHERE bd.bitacora_id = b.id) as total_equipos
 
             FROM BitacoraUso b
             JOIN Usuarios u ON b.usuario_id = u.id
-            JOIN Docentes d ON u.id = d.usuario_id  -- <--- AQUÍ ESTÁ EL CAMBIO IMPORTANTE
+            JOIN Docentes d ON u.id = d.usuario_id  -- JOIN CRÍTICO: Une ID de usuario con ID de docente
             JOIN Materias m ON b.materia_id = m.id
             ORDER BY b.fecha DESC, b.hora_entrada DESC
         `);
@@ -82,20 +81,20 @@ export const getBitacora = async (req, res) => {
     }
 };
 
-// 3. DETALLE DE UN REGISTRO ESPECÍFICO (ADMIN)
+// 3. DETALLE DE UN REGISTRO ESPECÍFICO (ADMIN - Drill Down)
 export const getBitacoraById = async (req, res) => {
     const { id } = req.params;
     try {
-        // A. Datos Generales (Header)
+        // A. Datos Generales
         const [general] = await pool.query(`
             SELECT 
                 b.*, 
-                d.nombre_completo as nombre_docente, -- <--- CAMBIO AQUÍ TAMBIÉN
+                d.nombre_completo as nombre_docente, 
                 u.email as email_docente,
                 m.nombre as nombre_materia
             FROM BitacoraUso b
             JOIN Usuarios u ON b.usuario_id = u.id
-            JOIN Docentes d ON u.id = d.usuario_id -- JOIN con tabla hija
+            JOIN Docentes d ON u.id = d.usuario_id
             JOIN Materias m ON b.materia_id = m.id
             WHERE b.id = ?
         `, [id]);
@@ -104,8 +103,7 @@ export const getBitacoraById = async (req, res) => {
             return res.status(404).json({ message: "Registro de bitácora no encontrado" });
         }
 
-        // B. Equipos Usados (Detalle)
-        // Esto no cambia mucho, ya que la relación es con Equipos directos
+        // B. Equipos Usados (Detalle de hardware)
         const [equipos] = await pool.query(`
             SELECT 
                 e.id, 
@@ -122,7 +120,7 @@ export const getBitacoraById = async (req, res) => {
             WHERE bd.bitacora_id = ?
         `, [id]);
 
-        // Retornamos el objeto combinado
+        // Respuesta combinada
         res.json({
             ...general[0],
             equipos_usados: equipos

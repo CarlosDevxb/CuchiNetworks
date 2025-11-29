@@ -1,5 +1,6 @@
 import pool from '../src/db.js';
 
+// 1. LISTAR MATERIAS
 export const getMaterias = async (req, res) => {
     try {
         const [rows] = await pool.query('SELECT * FROM Materias ORDER BY nombre ASC');
@@ -9,10 +10,11 @@ export const getMaterias = async (req, res) => {
     }
 };
 
+// 2. CREAR MATERIA
 export const createMateria = async (req, res) => {
     const { nombre, carrera, semestre } = req.body;
     
-    // 1. Validación básica
+    // Validación básica
     if (!nombre || !carrera) {
         return res.status(400).json({ message: "Nombre y Carrera son obligatorios" });
     }
@@ -24,14 +26,12 @@ export const createMateria = async (req, res) => {
         );
         res.status(201).json({ id: result.insertId, message: "Materia creada correctamente" });
     } catch (error) {
-        // 2. Capturar error de duplicado (UNIQUE en DB)
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ message: "Ya existe una materia con ese nombre." });
         }
         res.status(500).json({ message: error.message });
     }
 };
-// ... (tus funciones getMaterias y createMateria siguen igual) ...
 
 // 3. ACTUALIZAR MATERIA
 export const updateMateria = async (req, res) => {
@@ -50,19 +50,20 @@ export const updateMateria = async (req, res) => {
     }
 };
 
-// 4. ELIMINAR MATERIA (Con validación de dependencias)
+// 4. ELIMINAR MATERIA (Validación actualizada para esquema v4.0)
 export const deleteMateria = async (req, res) => {
     const { id } = req.params;
     try {
-        // A. VERIFICAR SI TIENE DOCENTES ASIGNADOS
-        const [docentes] = await pool.query(
-            'SELECT COUNT(*) as total FROM DocenteMaterias WHERE materia_id = ?', 
+        // A. VERIFICAR SI ESTÁ EN HORARIO DE CLASES (Tabla Clases)
+        // Antes revisábamos DocenteMaterias, ahora revisamos Clases
+        const [clases] = await pool.query(
+            'SELECT COUNT(*) as total FROM Clases WHERE materia_id = ?', 
             [id]
         );
         
-        if (docentes[0].total > 0) {
+        if (clases[0].total > 0) {
             return res.status(409).json({ 
-                message: `No se puede eliminar: Hay ${docentes[0].total} docente(s) impartiendo esta materia.` 
+                message: `No se puede eliminar: Hay ${clases[0].total} clase(s) programada(s) con esta materia.` 
             });
         }
 
@@ -74,7 +75,7 @@ export const deleteMateria = async (req, res) => {
 
         if (bitacoras[0].total > 0) {
             return res.status(409).json({ 
-                message: `No se puede eliminar: Existen ${bitacoras[0].total} registros de clases con esta materia en el historial.` 
+                message: `No se puede eliminar: Existen ${bitacoras[0].total} registros de clases pasadas con esta materia en el historial.` 
             });
         }
 
