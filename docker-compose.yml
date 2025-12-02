@@ -1,9 +1,6 @@
 
 
 services:
-  # ------------------------------------------
-  # SERVICIO 1: BASE DE DATOS (MySQL)
-  # ------------------------------------------
   db:
     image: mysql:8.0
     container_name: cuchinetworks_db
@@ -16,18 +13,12 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      # VOLUMEN NOMBRADO (Estándar de Producción)
-      # Docker gestiona esto internamente, no lo ves en tu carpeta.
       - mysql_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
-
-  # ------------------------------------------
-  # SERVICIO 2: BACKEND (Node API)
-  # ------------------------------------------
   backend:
     build: ./backend
     container_name: cuchinetworks_api
@@ -49,9 +40,6 @@ services:
       - ./backend:/app
       - /app/node_modules
 
-  # ------------------------------------------
-  # SERVICIO 3: FRONTEND (React)
-  # ------------------------------------------
   frontend:
     build: ./frontend
     container_name: cuchinetworks_client
