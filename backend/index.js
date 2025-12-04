@@ -15,6 +15,8 @@ import ubicacionesRoutes from './routes/ubicaciones.routes.js';
 import materiasRoutes from './routes/materias.routes.js';
 import docentesRoutes from './routes/docentes.routes.js';
 import bitacoraRoutes from './routes/bitacora.routes.js';
+import usuariosRoutes from './routes/usuarios.routes.js';
+import clasesRoutes from './routes/clases.routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -31,7 +33,7 @@ app.use(helmet({
 // Permite 100 peticiones cada 15 minutos por IP
 const apiLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000, 
-	max: 100, 
+	max: 1000, 
 	standardHeaders: true,
 	legacyHeaders: false,
     message: { message: "Demasiadas peticiones desde esta IP, intenta más tarde." }
@@ -59,6 +61,8 @@ app.use('/api/ubicaciones', ubicacionesRoutes);
 app.use('/api/materias', materiasRoutes);
 app.use('/api/docentes', docentesRoutes);
 app.use('/api/bitacora', bitacoraRoutes);
+app.use('/api/usuarios', usuariosRoutes);
+app.use('/api/clases', clasesRoutes);
 // Configuración de __dirnam
 // Arrancar Servidor
 app.listen(PORT, () => {

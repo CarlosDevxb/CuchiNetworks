@@ -5,84 +5,100 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import readline from 'readline';
 
-// 1. Configuración de entorno
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
-// 2. Configurar interfaz para leer de la terminal
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+const preguntar = (q) => new Promise((resolve) => rl.question(q, (a) => resolve(a.trim())));
 
-// Promesa para hacer preguntas de forma secuencial (async/await)
-const preguntar = (pregunta) => {
-    return new Promise((resolve) => {
-        rl.question(pregunta, (respuesta) => resolve(respuesta.trim()));
-    });
-};
-
-const crearUsuarioManual = async () => {
-    console.log("\n👤 --- ASISTENTE DE CREACIÓN DE USUARIOS CUCHINETWORKS ---");
+const crearUsuarioAvanzado = async () => {
+    console.log("\n👤 --- CREADOR DE USUARIOS v2 (Esquema Heredado) ---");
 
     let connection;
     try {
-        // 3. Conexión a la BD
-        // IMPORTANTE: Forzamos 127.0.0.1 porque el script corre en tu PC, no en Docker
         connection = await mysql.createConnection({
-            host: '127.0.0.1', 
+            host: '127.0.0.1', // Script local
             user: process.env.DB_USER,
             password: process.env.DB_PASSWORD,
             database: process.env.DB_NAME,
             port: process.env.DB_PORT
         });
 
-        // 4. Solicitar Datos
-        const nombre = await preguntar("1. Nombre completo del usuario: ");
-        if (!nombre) throw new Error("El nombre es obligatorio.");
+        // 1. DATOS COMUNES
+        const nombre = await preguntar("1. Nombre completo: ");
+        if (!nombre) throw new Error("Nombre obligatorio");
 
-        const rolInput = await preguntar("2. Rol (admin / docente / alumno) [default: alumno]: ");
+        const rolInput = await preguntar("2. Rol (admin / docente / alumno): ");
         const rol = ['admin', 'docente', 'alumno'].includes(rolInput.toLowerCase()) ? rolInput.toLowerCase() : 'alumno';
 
         const password = await preguntar("3. Contraseña: ");
-        if (!password) throw new Error("La contraseña es obligatoria.");
+        if (!password) throw new Error("Contraseña obligatoria");
 
-        // 5. Generar Email Automático (@cuchi.net)
-        // Lógica: Quita espacios, acentos, pasa a minúsculas y une con puntos.
-        // Ej: "Carlos Pérez" -> "carlos.perez@cuchi.net"
-        const emailPrefix = nombre
-            .toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quitar acentos
-            .replace(/\s+/g, '.'); // Espacios por puntos
-        
+        // Generar Email
+        const emailPrefix = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '.');
         const email = `${emailPrefix}@cuchi.net`;
+        console.log(`📧 Email generado: ${email}`);
 
-        console.log(`\n📧 Correo generado: ${email}`);
-        const confirmar = await preguntar("¿Proceder a crear usuario? (s/n): ");
-
-        if (confirmar.toLowerCase() !== 's') {
-            console.log("❌ Operación cancelada.");
-            process.exit(0);
+        // 2. DATOS ESPECÍFICOS SEGÚN ROL
+        let extraData = {};
+        if (rol === 'admin') {
+            extraData.cargo = await preguntar("   > Cargo (Ej. Gerente TI): ") || 'Administrador';
+        } else if (rol === 'docente') {
+            extraData.num_empleado = await preguntar("   > Número de Empleado: ") || 'S/N';
+            extraData.titulo = await preguntar("   > Título (Ing./Dr.): ") || 'Prof.';
+        } else if (rol === 'alumno') {
+            extraData.matricula = await preguntar("   > Matrícula: ");
+            if (!extraData.matricula) throw new Error("Matrícula obligatoria para alumnos");
+            extraData.carrera = await preguntar("   > Carrera: ");
         }
 
-        // 6. Encriptar y Guardar
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(password, salt);
+        const confirmar = await preguntar("\n¿Crear usuario? (s/n): ");
+        if (confirmar.toLowerCase() !== 's') process.exit(0);
 
-        await connection.execute(
-            'INSERT INTO Usuarios (nombre, email, password_hash, rol) VALUES (?, ?, ?, ?)',
-            [nombre, email, hash, rol]
-        );
+        // 3. TRANSACCIÓN (INSERTAR EN 2 TABLAS)
+        await connection.beginTransaction();
 
-        console.log(`\n✅ ¡ÉXITO! Usuario '${nombre}' creado con rol '${rol}'.`);
+        try {
+            // A. Insertar en Padre (Usuarios)
+            const salt = await bcrypt.genSalt(10);
+            const hash = await bcrypt.hash(password, salt);
+            
+            const [resUser] = await connection.execute(
+                'INSERT INTO Usuarios (email, password_hash, rol) VALUES (?, ?, ?)',
+                [email, hash, rol]
+            );
+            const userId = resUser.insertId;
+
+            // B. Insertar en Hija (Admin/Docente/Alumno)
+            if (rol === 'admin') {
+                await connection.execute(
+                    'INSERT INTO Administradores (usuario_id, nombre_completo, cargo) VALUES (?, ?, ?)',
+                    [userId, nombre, extraData.cargo]
+                );
+            } else if (rol === 'docente') {
+                await connection.execute(
+                    'INSERT INTO Docentes (usuario_id, nombre_completo, numero_empleado, titulo_academico) VALUES (?, ?, ?, ?)',
+                    [userId, nombre, extraData.num_empleado, extraData.titulo]
+                );
+            } else if (rol === 'alumno') {
+                await connection.execute(
+                    'INSERT INTO Alumnos (usuario_id, nombre_completo, matricula, carrera) VALUES (?, ?, ?, ?)',
+                    [userId, nombre, extraData.matricula, extraData.carrera]
+                );
+            }
+
+            await connection.commit();
+            console.log(`\n✅ ¡ÉXITO! Usuario ID ${userId} creado correctamente.`);
+
+        } catch (err) {
+            await connection.rollback(); // Deshacer cambios si falla la tabla hija
+            throw err;
+        }
 
     } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') {
-            console.error(`\n⚠️  Error: Ya existe un usuario con ese correo.`);
-        } else {
-            console.error("\n❌ Error del sistema:", error.message);
-        }
+        console.error("\n❌ Error:", error.message);
+        if (error.code === 'ER_DUP_ENTRY') console.error("   (Probablemente el correo o matrícula ya existe)");
     } finally {
         rl.close();
         if (connection) await connection.end();
@@ -90,4 +106,4 @@ const crearUsuarioManual = async () => {
     }
 };
 
-crearUsuarioManual();
+crearUsuarioAvanzado();

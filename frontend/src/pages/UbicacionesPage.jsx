@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Box, Plus, Loader2, Server, Layout } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import client from '../config/axios';
 
 const UbicacionesPage = () => {
   const [ubicaciones, setUbicaciones] = useState([]);
@@ -14,7 +15,7 @@ const UbicacionesPage = () => {
     const fetchUbicaciones = async () => {
       try {
         const token = localStorage.getItem('cuchi_token');
-        const res = await axios.get('http://localhost:3000/api/ubicaciones', {
+        const res = await client.get('/ubicaciones', {
             headers: { Authorization: `Bearer ${token}` }
         });
         setUbicaciones(res.data);

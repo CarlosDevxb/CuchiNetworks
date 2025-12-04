@@ -7,54 +7,94 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const [users] = await pool.query('SELECT * FROM Usuarios WHERE email = ?', [email]);
+        // 1. Buscar credenciales y ESTATUS
+        const [users] = await pool.query('SELECT id, email, password_hash, rol, estatus FROM Usuarios WHERE email = ?', [email]);
         
         if (users.length === 0) {
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
 
         const user = users[0];
-        const isMatch = await bcrypt.compare(password, user.password_hash);
 
+        // --- NUEVA VALIDACIÓN: ESTATUS ---
+        if (user.estatus === 'inactivo') {
+            return res.status(403).json({ message: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
+        }
+        // ---------------------------------
+
+        // 2. Verificar contraseña
+        const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
 
-        // GENERAR TOKEN CON TIMER CORTO (1 Hora)
+        // 3. OBTENER DATOS DE PERFIL SEGÚN ROL
+        let nombreUsuario = 'Usuario Sin Perfil';
+        let datosExtra = {};
+
+        if (user.rol === 'admin') {
+            const [admins] = await pool.query('SELECT nombre_completo, cargo FROM Administradores WHERE usuario_id = ?', [user.id]);
+            if (admins.length > 0) {
+                nombreUsuario = admins[0].nombre_completo;
+                datosExtra.cargo = admins[0].cargo;
+            }
+        } 
+        else if (user.rol === 'docente') {
+            const [docentes] = await pool.query('SELECT nombre_completo, numero_empleado FROM Docentes WHERE usuario_id = ?', [user.id]);
+            if (docentes.length > 0) {
+                nombreUsuario = docentes[0].nombre_completo;
+                datosExtra.numero_empleado = docentes[0].numero_empleado;
+            }
+        } 
+        else if (user.rol === 'alumno') {
+            const [alumnos] = await pool.query('SELECT nombre_completo, matricula, carrera FROM Alumnos WHERE usuario_id = ?', [user.id]);
+            if (alumnos.length > 0) {
+                nombreUsuario = alumnos[0].nombre_completo;
+                datosExtra.matricula = alumnos[0].matricula;
+                datosExtra.carrera = alumnos[0].carrera;
+            }
+        }
+
+        // 4. Generar Token
         const token = jwt.sign(
-            { id: user.id, rol: user.rol, nombre: user.nombre },
+            { 
+                id: user.id, 
+                rol: user.rol, 
+                nombre: nombreUsuario,
+                ...datosExtra 
+            },
             process.env.JWT_SECRET,
-            { expiresIn: '1h' } 
+            { expiresIn: '8h' }
         );
 
         res.json({
             token,
-            user: { id: user.id, nombre: user.nombre, email: user.email, rol: user.rol }
+            user: { 
+                id: user.id, 
+                nombre: nombreUsuario, 
+                email: user.email, 
+                rol: user.rol,
+                estatus: user.estatus, // Enviamos el estatus al front
+                ...datosExtra
+            }
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error en el servidor' });
+        console.error("Error en login:", error);
+        res.status(500).json({ message: 'Error interno del servidor' });
     }
 };
 
-// LOGOUT (NUEVO)
+// LOGOUT (Sin cambios)
 export const logout = async (req, res) => {
     try {
         const tokenHeader = req.headers.authorization;
-        if (!tokenHeader) return res.sendStatus(204); // Si no hay token, nada que hacer
-
+        if (!tokenHeader) return res.sendStatus(204);
         const token = tokenHeader.split(" ")[1] || tokenHeader;
-
-        // Guardamos el token en la lista negra con 1 hora de validez (lo que dura el token)
-        // Después de 1 hora, el token expira naturalmente, así que la DB se limpia sola (o la limpias tú con un CRON)
-        await pool.query(
-            'INSERT INTO TokenBlacklist (token, fecha_expiracion) VALUES (?, NOW() + INTERVAL 1 HOUR)', 
-            [token]
-        );
-
+        await pool.query('INSERT INTO TokenBlacklist (token, fecha_expiracion) VALUES (?, NOW() + INTERVAL 8 HOUR)', [token]);
         res.json({ message: "Sesión cerrada correctamente" });
     } catch (error) {
+        console.error("Error en logout:", error);
         res.status(500).json({ message: "Error al cerrar sesión" });
     }
 };

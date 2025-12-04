@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ArrowLeft, UploadCloud, Server, Monitor, Cpu } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import client from '../config/axios';
 const EquipoCreatePage = () => {
   const navigate = useNavigate();
 
@@ -48,7 +49,7 @@ const EquipoCreatePage = () => {
     const fetchUbicaciones = async () => {
         try {
             const token = localStorage.getItem('cuchi_token');
-            const res = await axios.get('http://localhost:3000/api/ubicaciones', {
+            const res = await client.get('/ubicaciones', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setListaUbicaciones(res.data);
@@ -128,7 +129,7 @@ const EquipoCreatePage = () => {
 
       dataToSend.append('detalles', JSON.stringify(detallesObjeto));
 
-      await axios.post('http://localhost:3000/api/equipos', dataToSend, {
+      await client.post('/equipos', dataToSend, {
         headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'

@@ -1,9 +1,8 @@
 import pool from '../src/db.js';
 
-// 1. LISTAR TODAS (Ya lo tenías, lo dejamos igual o mejoramos)
+// 1. LISTAR TODAS (Con conteo de equipos)
 export const getUbicaciones = async (req, res) => {
     try {
-        // Query mejorado: Cuenta cuántos equipos hay en cada ubicación
         const [rows] = await pool.query(`
             SELECT u.*, COUNT(e.id) as total_equipos 
             FROM Ubicaciones u
@@ -17,7 +16,7 @@ export const getUbicaciones = async (req, res) => {
     }
 };
 
-// 2. OBTENER UNA UBICACIÓN CON SUS EQUIPOS (El "Drill-down")
+// 2. OBTENER UNA UBICACIÓN CON SUS EQUIPOS (Drill-down)
 export const getUbicacionById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -28,7 +27,7 @@ export const getUbicacionById = async (req, res) => {
             return res.status(404).json({ message: 'Ubicación no encontrada' });
         }
 
-        // B. Equipos en esa ubicación (Reutilizamos campos clave para las tarjetas)
+        // B. Equipos en esa ubicación
         const [equiposRows] = await pool.query(`
             SELECT id, nombre_equipo, modelo, tipo, estado, imagen_url, serial_number, posicion_fisica
             FROM Equipos 
