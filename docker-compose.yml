@@ -1,8 +1,6 @@
-
-
 services:
   db:
-    image: mysql:8.0
+    image: mysql:8.0  
     container_name: cuchinetworks_db
     restart: always
     environment:
@@ -33,6 +31,7 @@ services:
       - DB_PORT=3306
       - JWT_SECRET=tu_clave_super_secreta_y_larga
       - PORT=3000
+      - VITE_API_URL=localhost:3000/api
     depends_on:
       db:
         condition: service_healthy
