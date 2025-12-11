@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, MapPin, Hash, Edit, Trash2, AlertTriangle, 
-  Save, X, Camera, Cpu, Monitor, Server, Cable, CheckCircle, XCircle, Router as RouterIcon 
+  Save, X, Camera, Cpu, Monitor, Server, Cable, CheckCircle, XCircle, Router as RouterIcon, Activity 
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import ConfirmModal from '../components/ConfirmModal';
-import client from '../config/axios'; // ✅ Usamos el cliente configurado
+import client from '../config/axios';
 
 const EquipoDetallePage = () => {
   const { id } = useParams();
@@ -35,7 +35,6 @@ const EquipoDetallePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Usamos client.get (ya tiene la URL base y el token por el interceptor)
         const [resUb, resEq] = await Promise.all([
             client.get('/ubicaciones'),
             client.get(`/equipos/${id}`)
@@ -68,6 +67,7 @@ const EquipoDetallePage = () => {
         // Aplanar JSON para inputs
         if (data.tipo === 'router' || data.tipo === 'switch') {
             setDetallesData({
+                ios_version: parsedDetalles?.ios_version || '', // <--- CARGAR IOS
                 interfaces_fast: parsedDetalles?.interfaces?.fastEthernet || 0,
                 interfaces_serial: parsedDetalles?.interfaces?.serial || 0,
                 interfaces_giga: parsedDetalles?.interfaces?.gigabit || 0,
@@ -124,7 +124,6 @@ const EquipoDetallePage = () => {
     try {
       const dataToSend = new FormData();
       
-      // Datos base
       dataToSend.append('nombre_equipo', formData.nombre_equipo);
       dataToSend.append('modelo', formData.modelo);
       dataToSend.append('serial_number', formData.serial_number);
@@ -139,6 +138,7 @@ const EquipoDetallePage = () => {
       let detallesObjeto = {};
       if (formData.tipo === 'router' || formData.tipo === 'switch') {
           detallesObjeto = {
+              ios_version: detallesData.ios_version, // <--- GUARDAR IOS
               interfaces: {
                   fastEthernet: detallesData.interfaces_fast,
                   serial: detallesData.interfaces_serial,
@@ -164,12 +164,10 @@ const EquipoDetallePage = () => {
       }
       dataToSend.append('detalles', JSON.stringify(detallesObjeto));
 
-      // ✅ CORRECCIÓN AQUÍ: Pasamos dataToSend y el header de multipart
       const response = await client.put(`/equipos/${id}`, dataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // Actualizar estado local
       setEquipo({ 
           ...formData, 
           detalles: detallesObjeto,
@@ -223,21 +221,34 @@ const EquipoDetallePage = () => {
           );
       } else if (equipo.tipo === 'router' || equipo.tipo === 'switch') {
           return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 animate-fade-in">
-                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                      <h4 className="font-bold text-cuchi-primary mb-2 flex items-center gap-2"><RouterIcon size={18}/> Interfaces</h4>
-                      <div className="flex justify-between text-sm text-gray-600">
-                          <div className="text-center"><span className="block font-bold text-lg">{d.interfaces?.fastEthernet || 0}</span>Fast</div>
-                          <div className="text-center"><span className="block font-bold text-lg">{d.interfaces?.serial || 0}</span>Serial</div>
-                          <div className="text-center"><span className="block font-bold text-lg">{d.interfaces?.gigabit || 0}</span>Giga</div>
-                      </div>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                      <h4 className="font-bold text-cuchi-primary mb-2 flex items-center gap-2"><Cable size={18}/> Cables</h4>
-                      <div className="flex flex-col gap-1 text-sm">
-                          <span className={`flex items-center gap-2 ${d.cables?.consola ? 'text-blue-700 font-medium' : 'text-gray-400'}`}>{d.cables?.consola ? <CheckCircle size={14}/> : <XCircle size={14}/>} Consola</span>
-                          <span className={`flex items-center gap-2 ${d.cables?.corriente ? 'text-blue-700 font-medium' : 'text-gray-400'}`}>{d.cables?.corriente ? <CheckCircle size={14}/> : <XCircle size={14}/>} Corriente</span>
-                      </div>
+              <div className="mt-4 animate-fade-in">
+                  {/* MOSTRAR VERSIÓN IOS */}
+                  {d.ios_version && (
+                    <div className="bg-white border border-blue-200 shadow-sm p-3 rounded-xl mb-4 flex items-center gap-3">
+                        <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><Activity size={18}/></div>
+                        <div>
+                            <p className="text-[10px] uppercase font-bold text-gray-400">Software IOS</p>
+                            <p className="text-sm font-bold text-cuchi-primary">{d.ios_version}</p>
+                        </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                        <h4 className="font-bold text-cuchi-primary mb-2 flex items-center gap-2"><RouterIcon size={18}/> Interfaces</h4>
+                        <div className="flex justify-between text-sm text-gray-600">
+                            <div className="text-center"><span className="block font-bold text-lg">{d.interfaces?.fastEthernet || 0}</span>Fast</div>
+                            <div className="text-center"><span className="block font-bold text-lg">{d.interfaces?.serial || 0}</span>Serial</div>
+                            <div className="text-center"><span className="block font-bold text-lg">{d.interfaces?.gigabit || 0}</span>Giga</div>
+                        </div>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                        <h4 className="font-bold text-cuchi-primary mb-2 flex items-center gap-2"><Cable size={18}/> Cables</h4>
+                        <div className="flex flex-col gap-1 text-sm">
+                            <span className={`flex items-center gap-2 ${d.cables?.consola ? 'text-blue-700 font-medium' : 'text-gray-400'}`}>{d.cables?.consola ? <CheckCircle size={14}/> : <XCircle size={14}/>} Consola</span>
+                            <span className={`flex items-center gap-2 ${d.cables?.corriente ? 'text-blue-700 font-medium' : 'text-gray-400'}`}>{d.cables?.corriente ? <CheckCircle size={14}/> : <XCircle size={14}/>} Corriente</span>
+                        </div>
+                    </div>
                   </div>
               </div>
           );
@@ -263,6 +274,12 @@ const EquipoDetallePage = () => {
       if (formData.tipo === 'router' || formData.tipo === 'switch') {
           return (
             <div className="bg-blue-50 p-4 rounded-2xl mt-4 border border-blue-200">
+                {/* CAMPO EDITAR IOS */}
+                <div className="mb-4">
+                    <label className="text-xs font-bold text-gray-500 uppercase block mb-1">Versión IOS</label>
+                    <input type="text" name="ios_version" value={detallesData.ios_version} onChange={handleDetalleChange} placeholder="Ej. Cisco 15.1" className="w-full p-2 border rounded" />
+                </div>
+
                 <div className="grid grid-cols-3 gap-2 mb-4">
                     <label className="text-xs block">Fast <input type="number" name="interfaces_fast" value={detallesData.interfaces_fast} onChange={handleDetalleChange} className="w-full p-1 border rounded" /></label>
                     <label className="text-xs block">Serial <input type="number" name="interfaces_serial" value={detallesData.interfaces_serial} onChange={handleDetalleChange} className="w-full p-1 border rounded" /></label>
@@ -409,11 +426,6 @@ const EquipoDetallePage = () => {
         </div>
       </div>
 
-      {/* CONFIRMACIÓN BORRADO (Si es necesario, agregar el botón de borrar al lado del de editar) */}
-      {/* Botón de borrar ejemplo: 
-      <button onClick={() => setShowConfirm(true)} className="p-3 bg-red-50 text-red-500 rounded-xl ml-2"><Trash2/></button> 
-      */}
-      
       <ConfirmModal 
           isOpen={showConfirm}
           onClose={() => setShowConfirm(false)}

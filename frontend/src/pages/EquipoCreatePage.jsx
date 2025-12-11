@@ -1,28 +1,32 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, UploadCloud, Server, Monitor, Cpu } from 'lucide-react';
+import { ArrowLeft, UploadCloud, Server, Monitor, Cpu, Activity } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import client from '../config/axios';
+// O usa import toast from 'react-hot-toast' si ya migraste a esa librería
+
 const EquipoCreatePage = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
-  const toast = useToast();
+  const toast = useToast(); // O usa toast directo de react-hot-toast
+  
   // ESTADO DEL FORMULARIO PRINCIPAL
   const [formData, setFormData] = useState({
     nombre_equipo: '',
     modelo: '',
     serial_number: '',
-    tipo: 'computadora',
+    tipo: 'computadora', // Valor por defecto
     estado: 'operativo',
     ubicacion_id: '',
-    posicion_fisica: '' // Campo nuevo para R1, Mesa 5, etc.
+    posicion_fisica: '' 
   });
   
   // ESTADO PARA LOS DETALLES TÉCNICOS (JSON)
   const [detalles, setDetalles] = useState({
     // Routers/Switches
+    ios_version: '', // <--- ¡NUEVO CAMPO!
     interfaces_fast: 0,
     interfaces_serial: 0,
     interfaces_giga: 0,
@@ -78,9 +82,8 @@ const EquipoCreatePage = () => {
 
   const handleUbicacionChange = (e) => {
     const id = parseInt(e.target.value);
-    setFormData({ ...formData, ubicacion_id: id, posicion_fisica: '' }); // Reseteamos posición al cambiar zona
+    setFormData({ ...formData, ubicacion_id: id, posicion_fisica: '' }); 
     
-    // Encontrar el objeto ubicación completo para saber su tipo (isla/mesa)
     const ub = listaUbicaciones.find(u => u.id === id);
     setUbicacionSeleccionada(ub);
   };
@@ -103,6 +106,7 @@ const EquipoCreatePage = () => {
 
       if (formData.tipo === 'router' || formData.tipo === 'switch') {
           detallesObjeto = {
+              ios_version: detalles.ios_version, // <--- AGREGADO AL JSON
               interfaces: {
                   fastEthernet: detalles.interfaces_fast,
                   serial: detalles.interfaces_serial,
@@ -125,6 +129,9 @@ const EquipoCreatePage = () => {
                   procesador: detalles.procesador
               }
           };
+      } else {
+        // Para otros equipos (impresoras, monitores sueltos)
+        detallesObjeto = { notas: "Equipo genérico" };
       }
 
       dataToSend.append('detalles', JSON.stringify(detallesObjeto));
@@ -136,11 +143,16 @@ const EquipoCreatePage = () => {
         }
       });
 
-      toast.success("Equipo registrado exitosamente.");
+      // Si usas el Toast Context viejo:
+      if(toast.success) toast.success("Equipo registrado exitosamente.");
+      // Si usas react-hot-toast (recomendado):
+      // toast.success("Equipo registrado exitosamente.");
+      
       navigate('/admin/equipos');
 
     } catch (error) {
-     toast.error("Error al registrar el equipo. Intenta nuevamente.");
+     console.error(error);
+     if(toast.error) toast.error("Error al registrar el equipo.");
     } finally {
       setLoading(false);
     }
@@ -156,6 +168,23 @@ const EquipoCreatePage = () => {
                   <h3 className="text-cuchi-primary font-bold flex items-center gap-2 mb-4">
                       <Server size={20} /> Especificaciones de Red
                   </h3>
+
+                  {/* NUEVA FILA: VERSIÓN DE IOS */}
+                  <div className="mb-4">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1 block">Versión IOS (Software)</label>
+                      <div className="relative">
+                        <Activity size={16} className="absolute left-3 top-3.5 text-blue-400"/>
+                        <input 
+                            type="text" 
+                            name="ios_version" 
+                            placeholder="Ej. Cisco IOS 15.1(4)M4 - Advanced IP Services" 
+                            className="input-std pl-9" // Padding left extra para el icono
+                            value={detalles.ios_version} 
+                            onChange={handleDetalleChange} 
+                        />
+                      </div>
+                  </div>
+
                   <div className="grid grid-cols-3 gap-4 mb-4">
                       <div>
                           <label className="text-xs font-bold text-gray-500">FastEthernet</label>
@@ -174,11 +203,11 @@ const EquipoCreatePage = () => {
                       </div>
                   </div>
                   <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border border-blue-100 shadow-sm">
                           <input type="checkbox" name="tiene_cable_consola" checked={detalles.tiene_cable_consola} onChange={handleDetalleChange} className="w-5 h-5 text-cuchi-primary rounded" />
                           <span className="text-sm font-medium text-gray-600">Cable Consola</span>
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
+                      <label className="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border border-blue-100 shadow-sm">
                           <input type="checkbox" name="tiene_cable_corriente" checked={detalles.tiene_cable_corriente} onChange={handleDetalleChange} className="w-5 h-5 text-cuchi-primary rounded" />
                           <span className="text-sm font-medium text-gray-600">Cable Corriente</span>
                       </label>

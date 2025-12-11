@@ -1,26 +1,22 @@
 import pool from '../src/db.js';
 
 // 1. OBTENER TODOS LOS EQUIPOS (Vista principal)
-export const getEquipos = async (req, res) => {
+export const getEquipos = async (req, res, next) => {
     try {
+        // MODIFICACIÓN: Agregamos el LEFT JOIN para traer el nombre de la ubicación
         const [rows] = await pool.query(`
             SELECT 
-                e.id, 
-                e.nombre_equipo, 
-                e.tipo, 
-                e.estado, 
-                e.modelo, 
-                e.imagen_url,
-                e.serial_number,
-                e.posicion_fisica, -- Agregado
-                u.nombre as ubicacion 
+                e.*, 
+                u.nombre AS ubicacion_nombre, 
+                u.tipo_zona 
             FROM Equipos e
             LEFT JOIN Ubicaciones u ON e.ubicacion_id = u.id
             ORDER BY e.id DESC
         `);
+        
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
