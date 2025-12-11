@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-
+import { errorHandler } from './middleware/error.middleware.js';
 // Rutas
 import pool from './src/db.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
@@ -19,9 +19,8 @@ import usuariosRoutes from './routes/usuarios.routes.js';
 import clasesRoutes from './routes/clases.routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
+import { PORT, ALLOWED_ORIGINS } from './src/config.js';
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 // --- SEGURIDAD NIVEL 1: HEADERS (HELMET) ---
 // crossOriginResourcePolicy: "cross-origin" permite que el Frontend cargue las imágenes
@@ -41,7 +40,20 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // --- MIDDLEWARES GENERALES ---
-app.use(cors());
+
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permitir requests sin origen (como Postman o Apps móviles)
+        if (!origin) return callback(null, true);
+        
+        if (ALLOWED_ORIGINS.indexOf(origin) === -1) {
+            return callback(new Error('CORS: Origen no permitido por política de seguridad'), false);
+        }
+        return callback(null, true);
+    },
+    credentials: true
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 
@@ -65,6 +77,8 @@ app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/clases', clasesRoutes);
 // Configuración de __dirnam
 // Arrancar Servidor
+app.use(errorHandler); // Manejo de errores (siempre al final de las rutas)
 app.listen(PORT, () => {
-    console.log(`\n📡 Servidor Backend corriendo en http://localhost:${PORT}`);
+    console.log(`📡 Servidor Backend corriendo en puerto ${PORT}`);
+    console.log(`🛡️ Orígenes permitidos: ${ALLOWED_ORIGINS.join(', ')}`);
 });

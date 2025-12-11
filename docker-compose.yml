@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 12345678
-      MYSQL_DATABASE: CuchiNetworks
+      MYSQL_DATABASE: cuchi_networks_db
       MYSQL_USER: CuchiNetworks
       MYSQL_PASSWORD: ositoBimbo
     ports:
@@ -27,11 +27,10 @@ services:
       - DB_HOST=db
       - DB_USER=CuchiNetworks
       - DB_PASSWORD=ositoBimbo
-      - DB_NAME=CuchiNetworks
+      - DB_NAME=cuchi_networks_db
       - DB_PORT=3306
       - JWT_SECRET=tu_clave_super_secreta_y_larga
       - PORT=3000
-      - VITE_API_URL=localhost:3000/api
     depends_on:
       db:
         condition: service_healthy
@@ -44,7 +43,9 @@ services:
     container_name: cuchinetworks_client
     restart: always
     ports:
-      - "5173:5173"
+      - "5173:80"
+    environment:
+      - API_URL=http://localhost:3000/api
     depends_on:
       - backend
     volumes:

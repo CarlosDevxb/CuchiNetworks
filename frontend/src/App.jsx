@@ -1,12 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { Toaster } from 'react-hot-toast'; // <--- 1. ¡AGREGA ESTO!
 
 // Layouts
 import AdminLayout from "./layouts/AdminLayout";
 import TeacherLayout from "./layouts/TeacherLayout";
 import StudentLayout from "./layouts/StudentLayout";
 
-// Pages (Aquí irás importando tus páginas reales)
+// Pages
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import EquiposPage from "./pages/EquiposPage";
@@ -41,78 +42,94 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <> {/* <--- 2. AGREGA ESTE FRAGMENTO DE APERTURA */}
+      
+      {/* El Toaster va FUERA de Routes para que sea visible siempre */}
+      <Toaster 
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          className: '',
+          style: {
+            border: '1px solid #713200',
+            padding: '16px',
+            color: '#713200',
+            fontFamily: 'sans-serif'
+          },
+        }}
+      />
 
-      {/* --- RUTAS ADMIN --- */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requiredRole="admin">
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="usuarios" element={<UsuariosPage />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="equipos" element={<EquiposPage />} />
-        <Route path="carga-academica" element={<CargaAcademicaPage />} />
-        <Route path="equipos/nuevo" element={<EquipoCreatePage />} />{" "}
-        {/* <--- AQUÍ, ANTES DEL ID */}
-        <Route path="equipos/:id" element={<EquipoDetallePage />} />
-        {/* 2. CAMBIAR ESTA LÍNEA (Antes tenías <div>Detalle de Equipo</div>) */}
-        <Route path="equipos/:id" element={<EquipoDetallePage />} />
-        <Route path="ubicaciones" element={<UbicacionesPage />} />
-        <Route path="ubicaciones/nueva" element={<UbicacionCreatePage />} />
-        <Route path="ubicaciones/:id" element={<UbicacionDetallePage />} />
-        <Route path="materias" element={<MateriasPage />} />
-        <Route path="docentes" element={<DocentesPage />} />
-        <Route path="bitacora" element={<BitacoraPage />} />
-        <Route path="bitacora/:id" element={<BitacoraDetallePage />} />
-      </Route>
-      {/* --- RUTAS DOCENTE --- */}
-      <Route
-        path="/docente"
-        element={
-          <ProtectedRoute requiredRole="docente">
-            <TeacherLayout />
-          </ProtectedRoute>
-        }
-      >
+      <Routes>
+        <Route path="/login" element={<Login />} />
+
+        {/* --- RUTAS ADMIN --- */}
         <Route
-          path="dashboard"
+          path="/admin"
           element={
-            <div className="text-2xl text-cuchi-text font-bold">
-              Bienvenido Profesor
-            </div>
+            <ProtectedRoute requiredRole="admin">
+              <AdminLayout />
+            </ProtectedRoute>
           }
-        />
+        >
+          <Route path="usuarios" element={<UsuariosPage />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="equipos" element={<EquiposPage />} />
+          <Route path="carga-academica" element={<CargaAcademicaPage />} />
+          <Route path="equipos/nuevo" element={<EquipoCreatePage />} />
+          <Route path="equipos/:id" element={<EquipoDetallePage />} />
+          
+          <Route path="ubicaciones" element={<UbicacionesPage />} />
+          <Route path="ubicaciones/nueva" element={<UbicacionCreatePage />} />
+          <Route path="ubicaciones/:id" element={<UbicacionDetallePage />} />
+          <Route path="materias" element={<MateriasPage />} />
+          <Route path="docentes" element={<DocentesPage />} />
+          <Route path="bitacora" element={<BitacoraPage />} />
+          <Route path="bitacora/:id" element={<BitacoraDetallePage />} />
+        </Route>
 
-<Route path="registrar-uso" element={<RegistrarClasePage />} />
-      </Route>
-
-      {/* --- RUTAS ALUMNO --- */}
-      <Route
-        path="/alumno"
-        element={
-          <ProtectedRoute requiredRole="alumno">
-            <StudentLayout />
-          </ProtectedRoute>
-        }
-      >
+        {/* --- RUTAS DOCENTE --- */}
         <Route
-          path="dashboard"
+          path="/docente"
           element={
-            <div className="text-2xl text-cuchi-text font-bold">
-              Bienvenido Alumno
-            </div>
+            <ProtectedRoute requiredRole="docente">
+              <TeacherLayout />
+            </ProtectedRoute>
           }
-        />
-      </Route>
+        >
+          <Route
+            path="dashboard"
+            element={
+              <div className="text-2xl text-cuchi-text font-bold">
+                Bienvenido Profesor
+              </div>
+            }
+          />
+          <Route path="registrar-uso" element={<RegistrarClasePage />} />
+        </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  );
+        {/* --- RUTAS ALUMNO --- */}
+        <Route
+          path="/alumno"
+          element={
+            <ProtectedRoute requiredRole="alumno">
+              <StudentLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route
+            path="dashboard"
+            element={
+              <div className="text-2xl text-cuchi-text font-bold">
+                Bienvenido Alumno
+              </div>
+            }
+          />
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
+    );
 }
 
 export default App;

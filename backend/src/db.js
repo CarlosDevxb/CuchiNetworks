@@ -1,30 +1,27 @@
-import mysql from 'mysql2/promise'; // Usamos la versión con Promesas (moderna)
-import dotenv from 'dotenv';
+import { createPool } from 'mysql2/promise';
+// 👇 1. Importar la configuración nueva
+import { DB_CONFIG } from './config.js'; 
 
-dotenv.config();
-
-// Creamos un "Pool" de conexiones.
-// Es más eficiente que abrir y cerrar una conexión por cada petición.
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
+// 👇 2. Usar el objeto limpio
+const pool = createPool({
+    host: DB_CONFIG.host,
+    user: DB_CONFIG.user,
+    password: DB_CONFIG.password,
+    database: DB_CONFIG.database,
+    port: DB_CONFIG.port,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 });
 
-
-// Probamos la conexión al iniciar
+// Verificación de conexión (Opcional pero recomendado)
 pool.getConnection()
     .then(connection => {
-        pool.releaseConnection(connection);
-        console.log('✅ Conexión a MySQL exitosa');
+        console.log(`✅ Conectado a la BD: ${DB_CONFIG.database} en ${DB_CONFIG.host}`);
+        connection.release();
     })
-    .catch(err => {
-        console.error('❌ Error conectando a MySQL:', err.message);
+    .catch(error => {
+        console.error('❌ Error conectando a la BD:', error.message);
     });
 
 export default pool;

@@ -2,18 +2,19 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   User, Shield, GraduationCap, Briefcase, Plus, Search, 
-  Edit, Power, X, Save, CheckCircle, XCircle 
+  Edit, Power, X, CheckCircle, XCircle 
 } from 'lucide-react';
 import client from '../config/axios';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../context/ToastContext'; // O usa react-hot-toast directo si prefieres
+import { TableSkeleton } from '../components/ui/Skeleton';
+import toast from 'react-hot-toast'; // Usando react-hot-toast para consistencia con Login
 
 const UsuariosPage = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRol, setFilterRol] = useState('todos'); // todos, admin, docente, alumno
-  const toast = useToast();
-
+  
   // MODAL
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -29,12 +30,17 @@ const UsuariosPage = () => {
 
   // --- 1. CARGAR USUARIOS ---
   const fetchUsuarios = async () => {
+      setLoading(true); // Aseguramos loading true al iniciar
       try {
+          // Simulamos un pequeño delay para que aprecies el Skeleton (puedes quitarlo luego)
+          await new Promise(resolve => setTimeout(resolve, 800)); 
+          
           const res = await client.get('/usuarios');
           setUsuarios(res.data);
-          setLoading(false);
       } catch (error) {
+          console.error(error);
           toast.error("Error cargando usuarios");
+      } finally {
           setLoading(false);
       }
   };
@@ -190,6 +196,30 @@ const UsuariosPage = () => {
       );
   };
 
+  // --- IMPLEMENTACIÓN DEL SKELETON (ESTADO DE CARGA) ---
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto pb-10 fade-in p-4">
+        {/* Header Simulado para evitar saltos */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h2 className="text-3xl font-bold text-cuchi-text">Gestión de Usuarios</h2>
+                <p className="text-gray-500">Administra cuentas, roles y accesos.</p>
+            </div>
+            {/* Placeholder del botón */}
+            <div className="h-12 w-40 bg-gray-200 rounded-2xl animate-pulse"></div>
+        </div>
+        
+        {/* Placeholder de Filtros */}
+        <div className="h-20 w-full bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 animate-pulse"></div>
+
+        {/* Tabla Skeleton */}
+        <TableSkeleton rows={6} />
+      </div>
+    );
+  }
+
+  // --- RENDER PRINCIPAL (CUANDO YA HAY DATOS) ---
   return (
     <div className="fade-in max-w-7xl mx-auto pb-10">
         

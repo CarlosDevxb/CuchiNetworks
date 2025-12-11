@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Zap } from 'lucide-react';
-// Importas la imagen como si fuera un componente más
+import toast from 'react-hot-toast'; // <--- 1. Importamos el disparador de notificaciones
 import loginImage from '../assets/cuchilogov2.png';
 
 const Login = () => {
@@ -13,40 +13,64 @@ const Login = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
-const handleSubmit = async (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
+
+    // 2. Disparamos la notificación de carga
+    const loadingToast = toast.loading('Iniciando sesión...');
     
     try {
+      // Mantenemos tu delay estético de 800ms
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      // 1. Hacemos el login y recibimos el usuario
+      // Intentamos loguear
       const user = await login(email, password);
       
-      // 2. REDIRECCIÓN INTELIGENTE (Switch Case)
+      // 3. ÉXITO: Quitamos el loading y mostramos mensaje verde
+      toast.dismiss(loadingToast);
+      toast.success(`¡Bienvenido de nuevo!`);
+      
+      // Redirección
       switch (user.rol) {
         case 'admin':
           navigate('/admin/dashboard');
           break;
         case 'docente':
-          navigate('/docente/dashboard'); // <--- ¡Esta era la línea que faltaba!
+          navigate('/docente/dashboard');
           break;
         case 'alumno':
           navigate('/alumno/dashboard');
           break;
         default:
-          // Si por alguna razón tiene un rol raro, lo mandamos al login
+          toast.error('Rol de usuario no reconocido');
           setError('Rol de usuario no reconocido');
           setIsLoading(false);
       }
 
     } catch (err) {
       console.error(err);
-      setError('Credenciales incorrectas o error de conexión');
+      
+      // 4. ERROR: Quitamos el loading y mostramos mensaje rojo
+      toast.dismiss(loadingToast);
+
+      // Definimos un mensaje amigable según el error
+      let errorMessage = 'Credenciales incorrectas o error de conexión';
+      
+      if (err.response?.status === 401) {
+        errorMessage = 'Usuario o contraseña incorrectos';
+      } else if (err.code === "ERR_NETWORK") {
+        errorMessage = 'No se pudo conectar al servidor. Revisa tu internet.';
+      }
+
+      toast.error(errorMessage);
+      setError(errorMessage); // Mantenemos el mensaje en la tarjeta también
       setIsLoading(false);
     }
   };
+
   return (
     // FONDO GENERAL: Usamos tu color más claro #E4EBF0
     <div className="min-h-screen flex items-center justify-center bg-cuchi-base p-4 font-sans">
@@ -68,8 +92,7 @@ const handleSubmit = async (e) => {
                 <span className="font-bold text-cuchi-primary tracking-wide">CuchiNetworks</span>
             </div>
 
-            {/* ILUSTRACIÓN 3D (Simulada con imagen) */}
-            {/* Esta imagen tiene estilo 3D colorido como tu referencia */}
+            {/* ILUSTRACIÓN 3D */}
             <div className="relative z-10 transform hover:scale-105 transition-transform duration-500">
                 <img 
                     src={loginImage} 
@@ -91,15 +114,16 @@ const handleSubmit = async (e) => {
             <h2 className="text-4xl font-bold text-cuchi-text mb-2">Hola de nuevo</h2>
             <p className="text-gray-400 mb-10">Ingresa tus datos para continuar.</p>
 
+            {/* Mantenemos este error visual por si el usuario no ve el toast */}
             {error && (
-              <div className="bg-red-50 text-red-500 text-sm rounded-xl p-3 mb-6 flex items-center animate-pulse">
+              <div className="bg-red-50 text-red-500 text-sm rounded-xl p-3 mb-6 flex items-center animate-pulse border border-red-100">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               
-              {/* Input Email Estilo "Soft" */}
+              {/* Input Email */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-600 ml-1">Correo Electrónico</label>
                 <div className="relative group">
@@ -111,14 +135,13 @@ const handleSubmit = async (e) => {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    // ESTILO CLAVE: Fondo gris suave (#F3F4F6), sin bordes, redondeado grande
                     className="block w-full pl-12 pr-4 py-4 bg-gray-50 border-transparent focus:bg-white focus:border-cuchi-primary focus:ring-4 focus:ring-cuchi-primary/10 rounded-2xl text-cuchi-text placeholder-gray-400 transition-all duration-200 font-medium outline-none"
                     placeholder="nombre@ejemplo.com"
                   />
                 </div>
               </div>
 
-              {/* Input Password Estilo "Soft" */}
+              {/* Input Password */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-600 ml-1">Contraseña</label>
                 <div className="relative group">
@@ -140,7 +163,6 @@ const handleSubmit = async (e) => {
               <button
                 type="submit"
                 disabled={isLoading}
-                // COLOR PRINCIPAL: #4180AB
                 className={`w-full flex items-center justify-center py-4 px-6 rounded-2xl text-white font-bold text-lg shadow-lg shadow-cuchi-primary/30 transform transition-all duration-200 hover:-translate-y-1
                   ${isLoading ? 'bg-cuchi-secondary cursor-not-allowed' : 'bg-cuchi-primary hover:shadow-xl hover:bg-[#366d95]'}`}
               >

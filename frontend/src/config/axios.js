@@ -1,14 +1,19 @@
 import axios from 'axios';
 
-// 1. Leemos la URL desde las variables de entorno de Vite
-// Si no existe la variable, usamos localhost por defecto para que no falle.
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// 2. Creamos una instancia "personalizada" de Axios
+// Lógica de Prioridad para la URL:
+// 1. window.APP_CONFIG.API_URL -> Inyectado por Docker/AWS en tiempo real.
+// 2. import.meta.env.VITE_API_URL -> Variable de entorno local (.env).
+// 3. Fallback a localhost.
+const apiUrl = window.APP_CONFIG?.API_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+console.log("📡 Axios conectado a:", apiUrl);
+
 const client = axios.create({
     baseURL: apiUrl,
-    // Aquí podemos añadir configuraciones globales futuras (como headers)
+    withCredentials: true 
 });
+
 
 // 3. Interceptor (Opcional pero recomendado):
 // Inyecta el TOKEN automáticamente en cada petición si existe.

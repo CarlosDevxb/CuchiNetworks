@@ -13,7 +13,7 @@ const router = Router();
 // Solo 5 intentos cada 15 minutos. ¡Duro contra la fuerza bruta!
 const loginLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
-	max: 5, 
+	max: 100, 
 	message: { message: "Demasiados intentos fallidos. Cuenta bloqueada temporalmente por 15 min." }
 });
 

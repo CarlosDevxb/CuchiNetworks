@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
 // LOGIN
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     const { email, password } = req.body;
 
     try {
@@ -11,21 +11,28 @@ export const login = async (req, res) => {
         const [users] = await pool.query('SELECT id, email, password_hash, rol, estatus FROM Usuarios WHERE email = ?', [email]);
         
         if (users.length === 0) {
-            return res.status(401).json({ message: 'Credenciales inválidas' });
+            const error = new Error('Credenciales invalidas' );
+            error.statusCode = 401;
+            throw error;
         }
 
         const user = users[0];
 
         // --- NUEVA VALIDACIÓN: ESTATUS ---
         if (user.estatus === 'inactivo') {
-            return res.status(403).json({ message: 'Tu cuenta ha sido desactivada. Contacta al administrador.' });
+           
+           const error = new Error('Tu cuenta ha sido desactivada. Contacta al administrador.' );
+            error.statusCode = 401;
+            throw error;
         }
         // ---------------------------------
 
         // 2. Verificar contraseña
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Credenciales inválidas' });
+             const error = new Error("Contraseña o usuario incorrectos");
+            error.statusCode = 401;
+            throw error;
         }
 
         // 3. OBTENER DATOS DE PERFIL SEGÚN ROL
@@ -80,8 +87,7 @@ export const login = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error en login:", error);
-        res.status(500).json({ message: 'Error interno del servidor' });
+        next(error);
     }
 };
 
