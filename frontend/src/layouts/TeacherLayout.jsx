@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
-import { Home, PenTool, History, AlertOctagon } from 'lucide-react';
+import { Home, BookOpen, AlertOctagon } from 'lucide-react'; // Ajusté los iconos
 
 const TeacherLayout = () => {
   const { user } = useAuth();
@@ -14,9 +14,8 @@ const TeacherLayout = () => {
     },
     {
       label: 'Gestión de Clase',
-      icon: <PenTool size={22} />,
+      icon: <BookOpen size={22} />, // Icono más acorde (Libro)
       subItems: [
-        { label: 'Registrar Actividad', path: '/docente/registrar-uso' }, // Lo que más usan
         { label: 'Mi Historial', path: '/docente/historial' }
       ]
     },
@@ -24,8 +23,9 @@ const TeacherLayout = () => {
       label: 'Soporte Técnico',
       icon: <AlertOctagon size={22} />,
       subItems: [
-        { label: 'Reportar Falla', path: '/docente/reportar' },
-        { label: 'Mis Reportes', path: '/docente/mis-reportes' }
+        // 1. Quitamos 'Reportar Falla' porque ahora es un Modal en el Dashboard
+        // 2. Corregimos 'to' por 'path' para que el Sidebar lo detecte bien
+        { label: 'Mis Reportes', path: '/docente/reportes' }
       ]
     }
   ];

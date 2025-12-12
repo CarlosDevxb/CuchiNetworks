@@ -1,7 +1,46 @@
 import pool from '../src/db.js';
 import bcrypt from 'bcryptjs';
 
-// 1. OBTENER DOCENTES (JOIN Usuarios + Docentes + Clases)
+
+export const registrarUso = async (req, res, next) => {
+    const connection = await pool.getConnection(); // Usamos una conexión dedicada para transacción
+    try {
+        const usuario_id = req.user.id;
+        const { materia_id, tema_visto, observaciones, equipos_ids, hora_inicio, hora_fin } = req.body;
+
+        await connection.beginTransaction(); // Iniciar Transacción
+
+        // 1. Insertar en BitacoraUso (Cabecera)
+        const [result] = await connection.query(`
+            INSERT INTO BitacoraUso 
+            (usuario_id, materia_id, tema_visto, observaciones, hora_entrada, hora_salida, fecha)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())
+        `, [usuario_id, materia_id, tema_visto, observaciones || '', hora_inicio, hora_fin]);
+
+        const bitacora_id = result.insertId;
+
+        // 2. Insertar los equipos usados (si seleccionó alguno)
+        if (equipos_ids && equipos_ids.length > 0) {
+            // Preparamos los valores para una inserción masiva
+            const valores = equipos_ids.map(eqId => [bitacora_id, eqId]);
+            
+            await connection.query(`
+                INSERT INTO BitacoraDispositivos (bitacora_id, equipo_id)
+                VALUES ?
+            `, [valores]);
+        }
+
+        await connection.commit(); // Confirmar cambios
+
+        res.json({ message: 'Clase registrada exitosamente', id: bitacora_id });
+
+    } catch (error) {
+        await connection.rollback(); // Si falla, deshacer todo
+        next(error);
+    } finally {
+        connection.release(); // Liberar conexión
+    }
+};
 export const getDocentes = async (req, res) => {
     try {
         // Query con JOIN a la tabla hija 'Docentes' y subquery para clases
@@ -64,7 +103,31 @@ export const getDocentes = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+export const getMisClases = async (req, res, next) => {
+    try {
+        // El ID del usuario viene del token (req.user.id)
+        // Pero necesitamos el ID de la tabla 'Docentes', no 'Usuarios'
+        // Hacemos un subquery o join para buscarlo
+        const usuario_id = req.user.id;
 
+        const [clases] = await pool.query(`
+            SELECT 
+                c.id, c.materia_id, c.grupo, c.dia_semana, c.hora_inicio, c.hora_fin,
+                m.nombre as materia,
+                m.carrera,
+                m.semestre
+            FROM Clases c
+            INNER JOIN Docentes d ON c.docente_id = d.id
+            INNER JOIN Materias m ON c.materia_id = m.id
+            WHERE d.usuario_id = ? 
+            ORDER BY FIELD(c.dia_semana, 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'), c.hora_inicio
+        `, [usuario_id]);
+
+        res.json(clases);
+    } catch (error) {
+        next(error);
+    }
+};
 // 2. GUARDAR DOCENTE (Transacción en 2 tablas)
 export const saveDocente = async (req, res) => {
     // Recibimos 'nombre', que guardaremos como 'nombre_completo' en la tabla hija
@@ -126,5 +189,27 @@ export const saveDocente = async (req, res) => {
         res.status(500).json({ message: error.message });
     } finally {
         if (connection) connection.release();
+    }
+};
+// GET /api/docentes/historial
+export const getHistorial = async (req, res, next) => {
+    try {
+        const usuario_id = req.user.id;
+
+        const [rows] = await pool.query(`
+            SELECT 
+                b.id, b.fecha, b.tema_visto, b.observaciones, 
+                b.hora_entrada, b.hora_salida,
+                m.nombre as materia
+                -- ❌ ELIMINAMOS 'm.grupo' PORQUE NO EXISTE EN LA TABLA MATERIAS
+            FROM BitacoraUso b
+            JOIN Materias m ON b.materia_id = m.id
+            WHERE b.usuario_id = ?
+            ORDER BY b.fecha DESC, b.hora_entrada DESC
+        `, [usuario_id]);
+
+        res.json(rows);
+    } catch (error) {
+        next(error);
     }
 };

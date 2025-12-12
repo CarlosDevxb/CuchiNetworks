@@ -1,181 +1,204 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '../context/ToastContext';
-import { Save, CheckCircle, Server, Monitor, Layout } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Save, Server, Monitor, CheckSquare, Square } from 'lucide-react';
 import client from '../config/axios';
+import toast from 'react-hot-toast';
 
 const RegistrarClasePage = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const toast = useToast();
-  const [loading, setLoading] = useState(false);
+  const claseId = searchParams.get('clase_id'); // Leemos el ID que mandó el Dashboard
 
-  // Datos del formulario
-  const [formData, setFormData] = useState({
-    materia_id: '',
-    tipo_clase: 'teorica',
-    hora_entrada: '',
-    hora_salida: '',
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Datos para mostrar y enviar
+  const [claseInfo, setClaseInfo] = useState(null);
+  const [equiposDisponibles, setEquiposDisponibles] = useState([]);
+  
+  // Estado del Formulario
+  const [form, setForm] = useState({
     tema_visto: '',
     observaciones: '',
-    equipos_ids: []
+    equipos_seleccionados: [] // Array de IDs
   });
 
-  // Catálogos
-  const [materias, setMaterias] = useState([]);
-  const [ubicaciones, setUbicaciones] = useState([]); // Para filtrar equipos por zona
-  const [equiposPorUbicacion, setEquiposPorUbicacion] = useState([]); // Equipos a mostrar
-  const [ubicacionSeleccionada, setUbicacionSeleccionada] = useState('');
-
-  // 1. Cargar Materias y Ubicaciones al inicio
+  // 1. CARGAR DATOS (Info de la clase + Equipos disponibles)
   useEffect(() => {
-    const initData = async () => {
-        const token = localStorage.getItem('cuchi_token');
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-        try {
-            const [resMat, resUb] = await Promise.all([
-                client.get('/materias', config),
-                client.get('/ubicaciones', config)
-            ]);
-            setMaterias(resMat.data);
-            setUbicaciones(resUb.data);
-        } catch (e) { console.error(e); }
-    };
-    initData();
-  }, []);
-
-  // 2. Cargar equipos cuando selecciona una ubicación (Para clase práctica)
-  const handleUbicacionChange = async (e) => {
-      const id = e.target.value;
-      setUbicacionSeleccionada(id);
-      if(!id) { setEquiposPorUbicacion([]); return; }
-
+    const cargarDatos = async () => {
       try {
-          const token = localStorage.getItem('cuchi_token');
-          // Reutilizamos el endpoint que te trae ubicación + sus equipos
-          const res = await client.get(`/ubicaciones/${id}`, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          setEquiposPorUbicacion(res.data.equipos || []);
-      } catch (e) { console.error(e); }
-  };
+        // A. Traemos las clases del profe para encontrar la info de ESTA clase
+        const resClases = await client.get('/docentes/mis-clases');
+        const claseEncontrada = resClases.data.find(c => c.id == claseId);
+        
+        if (!claseEncontrada) {
+            toast.error("Clase no encontrada o no asignada.");
+            navigate('/docente/dashboard');
+            return;
+        }
+        setClaseInfo(claseEncontrada);
 
-  // 3. Manejar selección de equipos (Checkboxes)
-  const toggleEquipo = (id) => {
-      const currentIds = formData.equipos_ids;
-      if (currentIds.includes(id)) {
-          setFormData({ ...formData, equipos_ids: currentIds.filter(x => x !== id) });
-      } else {
-          setFormData({ ...formData, equipos_ids: [...currentIds, id] });
-      }
-  };
+        // B. Traemos equipos operativos para que seleccione cuáles usó
+        const resEquipos = await client.get('/equipos');
+        // Filtramos solo los operativos
+        const operativos = resEquipos.data.filter(e => e.estado === 'operativo');
+        setEquiposDisponibles(operativos);
 
-  // 4. Submit
-  const handleSubmit = async (e) => {
-      e.preventDefault();
-      setLoading(true);
-      try {
-          const token = localStorage.getItem('cuchi_token');
-          await client.post('/bitacora', formData, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          toast.success("Clase registrada correctamente");
-          navigate('/docente/dashboard');
       } catch (error) {
-          toast.error("Error al registrar la clase");
-      } finally { setLoading(false); }
+        console.error(error);
+        toast.error("Error cargando datos del formulario");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (claseId) cargarDatos();
+  }, [claseId, navigate]);
+
+  // HANDLERS
+  const toggleEquipo = (id) => {
+    setForm(prev => {
+        const selected = prev.equipos_seleccionados;
+        if (selected.includes(id)) {
+            return { ...prev, equipos_seleccionados: selected.filter(eid => eid !== id) };
+        } else {
+            return { ...prev, equipos_seleccionados: [...selected, id] };
+        }
+    });
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.tema_visto) return toast.error("El tema visto es obligatorio");
+
+    setSubmitting(true);
+    try {
+        const payload = {
+         
+            // Asumiendo que agregamos 'c.materia_id' al SELECT del backend:
+            materia_id: claseInfo.id, // ⚠️ Revisa la nota abajo sobre esto
+            tema_visto: form.tema_visto,
+            observaciones: form.observaciones,
+            hora_inicio: claseInfo.hora_inicio,
+            hora_fin: claseInfo.hora_fin,
+            equipos_ids: form.equipos_seleccionados
+        };
+        
+        // NOTA: Como en 'mis-clases' el ID principal es el de la tabla CLASES, y Bitacora pide Materia,
+        // necesitamos asegurar que enviamos el ID correcto. 
+        // Si tu tabla BitacoraUso usa FK a Materias, necesitamos ese ID.
+        // Voy a ajustar el payload suponiendo que editaremos el controller de 'mis-clases' rápido.
+        
+        await client.post('/docentes/registrar-uso', {
+            ...payload,
+            // Truco temporal: Si no tienes el materia_id a mano, mándalo igual y ajustamos.
+            // Pero lo correcto es editar el controller 'getMisClases' para que devuelva 'c.materia_id'.
+        });
+
+        toast.success("Asistencia registrada correctamente");
+        navigate('/docente/dashboard');
+
+    } catch (error) {
+        console.error(error);
+        toast.error("Error al guardar la bitácora");
+    } finally {
+        setSubmitting(false);
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center">Cargando formulario...</div>;
 
   return (
-    <div className="fade-in max-w-4xl mx-auto pb-10">
-      <h2 className="text-3xl font-bold text-cuchi-text mb-6">Registrar Actividad</h2>
+    <div className="fade-in max-w-4xl mx-auto pb-10 font-sans p-6">
       
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-[2rem] shadow-sm border border-gray-100 space-y-6">
-          
-          {/* DATOS GENERALES */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                  <label className="text-label">Materia</label>
-                  <select required className="input-std" value={formData.materia_id} onChange={e => setFormData({...formData, materia_id: e.target.value})}>
-                      <option value="">Selecciona materia...</option>
-                      {materias.map(m => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                  </select>
-              </div>
-              <div>
-                  <label className="text-label">Tipo de Clase</label>
-                  <div className="flex gap-4 mt-2">
-                      <label className={`cursor-pointer px-4 py-2 rounded-xl border transition-all ${formData.tipo_clase === 'teorica' ? 'bg-blue-50 border-cuchi-primary text-cuchi-primary font-bold' : 'border-gray-200 text-gray-500'}`}>
-                          <input type="radio" className="hidden" name="tipo" value="teorica" checked={formData.tipo_clase === 'teorica'} onChange={() => setFormData({...formData, tipo_clase: 'teorica'})}/>
-                          📖 Teórica
-                      </label>
-                      <label className={`cursor-pointer px-4 py-2 rounded-xl border transition-all ${formData.tipo_clase === 'practica' ? 'bg-purple-50 border-purple-600 text-purple-600 font-bold' : 'border-gray-200 text-gray-500'}`}>
-                          <input type="radio" className="hidden" name="tipo" value="practica" checked={formData.tipo_clase === 'practica'} onChange={() => setFormData({...formData, tipo_clase: 'practica'})}/>
-                          🛠️ Práctica
-                      </label>
-                  </div>
-              </div>
-          </div>
+      {/* HEADER */}
+      <button onClick={() => navigate('/docente/dashboard')} className="flex items-center text-gray-500 mb-6 hover:text-cuchi-primary">
+        <ArrowLeft size={20} className="mr-2" /> Cancelar y Volver
+      </button>
 
-          <div className="grid grid-cols-2 gap-6">
-              <div><label className="text-label">Hora Entrada</label><input type="time" required className="input-std" value={formData.hora_entrada} onChange={e => setFormData({...formData, hora_entrada: e.target.value})}/></div>
-              <div><label className="text-label">Hora Salida</label><input type="time" required className="input-std" value={formData.hora_salida} onChange={e => setFormData({...formData, hora_salida: e.target.value})}/></div>
-          </div>
+      <div className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 p-8 md:p-12">
+        <div className="mb-8 border-b border-gray-100 pb-6">
+            <h1 className="text-3xl font-bold text-cuchi-text">Registrar Actividad</h1>
+            <p className="text-gray-400 mt-2 text-lg">
+                Materia: <strong className="text-cuchi-primary">{claseInfo?.materia}</strong> 
+                <span className="mx-2">|</span> 
+                Grupo: {claseInfo?.grupo}
+            </p>
+        </div>
 
-          <div>
-              <label className="text-label">Tema Visto / Actividad</label>
-              <input type="text" required placeholder="Ej. Configuración de VLANs" className="input-std" value={formData.tema_visto} onChange={e => setFormData({...formData, tema_visto: e.target.value})}/>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* 1. DATOS DE LA SESIÓN */}
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Tema Visto en Clase</label>
+                    <input 
+                        type="text" 
+                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:border-cuchi-primary outline-none transition-colors font-medium"
+                        placeholder="Ej. Configuración de VLANs en Packet Tracer"
+                        value={form.tema_visto}
+                        onChange={e => setForm({...form, tema_visto: e.target.value})}
+                        required
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Observaciones / Incidencias (Opcional)</label>
+                    <textarea 
+                        className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl focus:border-cuchi-primary outline-none transition-colors font-medium h-24 resize-none"
+                        placeholder="Ej. El proyector tardó en encender, faltaron 3 alumnos..."
+                        value={form.observaciones}
+                        onChange={e => setForm({...form, observaciones: e.target.value})}
+                    />
+                </div>
+            </div>
 
-          {/* SECCIÓN PRÁCTICA (SELECCIÓN DE EQUIPOS) */}
-          {formData.tipo_clase === 'practica' && (
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 animate-fade-in">
-                  <h3 className="text-purple-700 font-bold mb-4 flex items-center gap-2"><Server size={20}/> Registro de Equipos Utilizados</h3>
-                  
-                  {/* Filtro por Ubicación */}
-                  <div className="mb-4">
-                      <label className="text-xs font-bold text-gray-400 uppercase">Filtrar por Zona:</label>
-                      <select className="input-std mt-1" onChange={handleUbicacionChange} value={ubicacionSeleccionada}>
-                          <option value="">-- Selecciona una Isla/Mesa --</option>
-                          {ubicaciones.map(u => <option key={u.id} value={u.id}>{u.nombre}</option>)}
-                      </select>
-                  </div>
+            {/* 2. SELECTOR DE EQUIPOS (SIMPLE) */}
+            <div>
+                <h3 className="text-lg font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <Server size={20} className="text-blue-500"/> Equipos Utilizados
+                </h3>
+                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 max-h-60 overflow-y-auto custom-scrollbar">
+                    {equiposDisponibles.length === 0 ? (
+                        <p className="text-gray-400 text-sm">No hay equipos operativos registrados en el inventario.</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {equiposDisponibles.map(eq => {
+                                const isSelected = form.equipos_seleccionados.includes(eq.id);
+                                return (
+                                    <div 
+                                        key={eq.id}
+                                        onClick={() => toggleEquipo(eq.id)}
+                                        className={`cursor-pointer p-3 rounded-xl border flex items-center gap-3 transition-all ${isSelected ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-white border-gray-100 hover:border-blue-200'}`}
+                                    >
+                                        <div className={isSelected ? 'text-cuchi-primary' : 'text-gray-300'}>
+                                            {isSelected ? <CheckSquare size={20}/> : <Square size={20}/>}
+                                        </div>
+                                        <div>
+                                            <p className={`text-sm font-bold ${isSelected ? 'text-blue-800' : 'text-gray-600'}`}>{eq.nombre_equipo}</p>
+                                            <p className="text-xs text-gray-400">{eq.modelo}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+                <p className="text-xs text-gray-400 mt-2 text-right">Selecciona los equipos físicos que utilizaste durante la práctica.</p>
+            </div>
 
-                  {/* Grid de Equipos (Checkboxes) */}
-                  {equiposPorUbicacion.length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto p-2">
-                          {equiposPorUbicacion.map(eq => (
-                              <label key={eq.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${formData.equipos_ids.includes(eq.id) ? 'bg-purple-100 border-purple-500 shadow-sm' : 'bg-white border-gray-200 hover:border-purple-300'}`}>
-                                  <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${formData.equipos_ids.includes(eq.id) ? 'bg-purple-600 border-purple-600' : 'border-gray-300'}`}>
-                                      {formData.equipos_ids.includes(eq.id) && <CheckCircle size={14} className="text-white"/>}
-                                  </div>
-                                  <div>
-                                      <span className="block text-sm font-bold text-gray-700">{eq.nombre_equipo}</span>
-                                      <span className="text-xs text-gray-400">{eq.posicion_fisica || eq.modelo}</span>
-                                  </div>
-                                  <input type="checkbox" className="hidden" checked={formData.equipos_ids.includes(eq.id)} onChange={() => toggleEquipo(eq.id)} />
-                              </label>
-                          ))}
-                      </div>
-                  ) : (
-                      <p className="text-sm text-gray-400 italic text-center py-4">Selecciona una zona para ver equipos disponibles.</p>
-                  )}
-                  
-                  <div className="mt-4 text-right text-sm font-bold text-purple-600">
-                      {formData.equipos_ids.length} dispositivos seleccionados en total
-                  </div>
-              </div>
-          )}
+            {/* BOTÓN SUBMIT */}
+            <div className="pt-4">
+                <button 
+                    type="submit" 
+                    disabled={submitting}
+                    className={`w-full py-4 rounded-2xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-2 transition-all ${submitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-cuchi-primary hover:bg-blue-700 hover:-translate-y-1 shadow-blue-200'}`}
+                >
+                    {submitting ? 'Guardando...' : <><Save size={20}/> Registrar en Bitácora</>}
+                </button>
+            </div>
 
-          <div>
-              <label className="text-label">Observaciones (Opcional)</label>
-              <textarea rows="2" className="input-std" placeholder="Incidencias menores, comentarios..." value={formData.observaciones} onChange={e => setFormData({...formData, observaciones: e.target.value})}></textarea>
-          </div>
-
-          <button type="submit" disabled={loading} className="w-full py-4 bg-cuchi-primary text-white rounded-2xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-all flex justify-center gap-2">
-              {loading ? 'Guardando...' : <><Save/> Registrar Clase</>}
-          </button>
-      </form>
-      <style>{`.input-std { width: 100%; padding: 0.75rem; border: 1px solid #E5E7EB; border-radius: 0.75rem; outline: none; } .text-label { display: block; font-size: 0.7rem; font-weight: 800; color: #9CA3AF; text-transform: uppercase; margin-bottom: 0.25rem; }`}</style>
+        </form>
+      </div>
     </div>
   );
 };

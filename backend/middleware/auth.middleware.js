@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import pool from '../src/db.js';
+import pool from '../src/db.js'; // Asegúrate que la ruta a db.js sea correcta
 
 // 1. VERIFICAR TOKEN Y BLACKLIST
 export const verifyToken = async (req, res, next) => {
@@ -20,9 +20,11 @@ export const verifyToken = async (req, res, next) => {
         }
 
         // B. VERIFICAR FIRMA Y EXPIRACIÓN
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Asegúrate que JWT_SECRET esté en tu .env o config.js
+        const secret = process.env.JWT_SECRET || 'secreto_temporal_inseguro'; 
+        const decoded = jwt.verify(token, secret);
         
-        // Guardamos al usuario en la request para usarlo en el siguiente paso
+        // Guardamos al usuario en la request
         req.user = decoded;
         next();
 
@@ -31,17 +33,22 @@ export const verifyToken = async (req, res, next) => {
     }
 };
 
-// 2. VERIFICAR ROLES (Dinámico)
-// Se usa así: verifyRole(['admin', 'docente'])
+// 2. VERIFICAR ROLES (Dinámico y Flexible)
 export const verifyRole = (rolesPermitidos) => {
     return (req, res, next) => {
         if (!req.user) {
             return res.status(500).json({ message: "Error de seguridad: Usuario no procesado." });
         }
 
-        if (rolesPermitidos.includes(req.user.rol)) {
-            next(); // El usuario tiene uno de los roles permitidos
+        // --- CORRECCIÓN AQUÍ: Normalizamos a minúsculas ---
+        // Esto hace que "Docente", "docente" y "DOCENTE" sean lo mismo.
+        const rolUsuario = req.user.rol ? req.user.rol.toLowerCase() : '';
+        const rolesPermitidosLower = rolesPermitidos.map(r => r.toLowerCase());
+
+        if (rolesPermitidosLower.includes(rolUsuario)) {
+            next(); // ✅ Pase adelante
         } else {
+            console.log(`⛔ Acceso denegado. Usuario: ${rolUsuario}, Requerido: ${rolesPermitidosLower}`);
             return res.status(403).json({ 
                 message: `Acceso prohibido. Se requiere rol: ${rolesPermitidos.join(' o ')}` 
             });
@@ -49,5 +56,8 @@ export const verifyRole = (rolesPermitidos) => {
     };
 };
 
-// Middleware legacy (por si lo usabas en otro lado, opcional)
+// 👇 3. EXPORTS DEFINIDOS (Esto es lo que faltaba o estaba fallando)
+export const isDocente = verifyRole(['docente']);
+export const isAlumno = verifyRole(['alumno']);
+export const isAdmin = verifyRole(['admin']);
 export const verifyAdmin = verifyRole(['admin']);

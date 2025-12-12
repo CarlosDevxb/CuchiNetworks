@@ -17,6 +17,7 @@ import docentesRoutes from './routes/docentes.routes.js';
 import bitacoraRoutes from './routes/bitacora.routes.js';
 import usuariosRoutes from './routes/usuarios.routes.js';
 import clasesRoutes from './routes/clases.routes.js';
+import reportesRoutes from './routes/reportes.routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { PORT, ALLOWED_ORIGINS } from './src/config.js';
@@ -75,6 +76,7 @@ app.use('/api/docentes', docentesRoutes);
 app.use('/api/bitacora', bitacoraRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/clases', clasesRoutes);
+app.use('/api/reportes', reportesRoutes);
 // Configuración de __dirnam
 // Arrancar Servidor
 app.use(errorHandler); // Manejo de errores (siempre al final de las rutas)
